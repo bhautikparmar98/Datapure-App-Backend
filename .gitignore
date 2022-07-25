@@ -1,0 +1,19 @@
+
+# Logs
+logs/
+*.log
+
+
+# API keys and secrets
+.env
+
+# Dependency directory
+node_modules/
+
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Ignore built ts files
+dist/
