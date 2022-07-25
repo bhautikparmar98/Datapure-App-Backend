@@ -39,8 +39,6 @@ const createUser: RequestHandler = async (req, res) => {
 
     res.status(201).send(response);
   } catch (err) {
-    logger.error(err);
-
     const response = appResponse('Error creating user.', false);
     res.status(500).send(response);
   }
@@ -66,8 +64,6 @@ const loginUser: RequestHandler = async (req, res) => {
     const response = appResponse('User logged in successfully', true, user);
     res.status(200).send(response);
   } catch (err) {
-    logger.error(err);
-
     const response = appResponse(
       'Something went wrong. Try again later.',
       false
@@ -110,8 +106,6 @@ const getProfile: RequestHandler = async (req, res) => {
     const response = appResponse('User found', true, user);
     res.status(200).send(response);
   } catch (err) {
-    logger.error(err);
-
     const response = appResponse('Error getting user profile', false);
     res.status(500).send(response);
   }
@@ -176,8 +170,6 @@ const deleteUser: RequestHandler = async (req, res) => {
     response = appResponse('User deleted successfully', true, user);
     return res.status(200).send(response);
   } catch (err) {
-    logger.error(err);
-
     const response = appResponse('Error deleting user', false);
     res.status(500).send(response);
   }
