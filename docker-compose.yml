@@ -1,0 +1,33 @@
+version: '3'
+services:
+    datapure_mysql:
+      image: mysql:5.7
+      container_name: datapure_mysql
+      volumes:
+        - datapure_mysql-volume:/data/mysqldb
+      environment:
+        - MYSQL_ROOT_PASSWORD=password
+        - MYSQL_DATABASE=datapure-dev
+        - MYSQL_USER=user
+        - MYSQL_PASSWORD=password
+      ports:
+        - '3307:3306'
+
+    datapure_dev:
+      build: .
+      container_name: datapure_dev
+      volumes:
+        - ./:/usr/src/app
+      ports:
+        - "4000:80"
+      environment:
+        - PORT=80
+        - NODE_ENV=development
+        - DATABASE_URL="mysql://user:password@datapure_mysql:3306/datapure-dev?schema=public"
+      restart: "no"
+      depends_on:
+        - datapure_mysql
+        
+
+volumes:
+  datapure_mysql-volume:
