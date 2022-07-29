@@ -1,4 +1,5 @@
 import { json } from 'body-parser';
+import { errors } from 'celebrate';
 import cors from 'cors';
 import express from 'express';
 import { ApiRoutes } from '../api';
@@ -18,6 +19,9 @@ export default ({ app }: { app: express.Application }): void => {
 
   // Load API routes
   app.use(config.api.prefix, ApiRoutes());
+
+  // handle errors from 'celebrate'
+  app.use(errors());
 
   /// catch 404 and forward to error handler
   // app.use((req, res, next) => {

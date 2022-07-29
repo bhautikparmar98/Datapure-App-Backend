@@ -6,7 +6,8 @@
   "scripts": {
     "build": "npx tsc",
     "start": "node dist/index.js",
-    "dev": "npx nodemon -L --watch src -e ts --exec ts-node src/index.ts"
+    "dev": "npx nodemon -L --watch src -e ts --exec ts-node src/index.ts",
+    "db:generate": "prisma generate"
   },
   "engines": {
     "npm": ">=7.18.1",
@@ -15,8 +16,10 @@
   "dependencies": {
     "@google-cloud/vision": "^2.4.2",
     "@prisma/client": "^4.1.0",
+    "accesscontrol": "^2.2.1",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.2",
+    "celebrate": "^15.0.1",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
     "express": "^4.17.3",

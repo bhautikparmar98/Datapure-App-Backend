@@ -8,7 +8,8 @@ interface CustomNodeJsGlobal {
 // Prevent multiple instances of Prisma Client in development
 declare const global: CustomNodeJsGlobal;
 
-const prisma = global.prisma || new PrismaClient();
+const prisma: PrismaClient =
+  (global.prisma as PrismaClient) || new PrismaClient();
 
 if (process.env.NODE_ENV === 'development') global.prisma = prisma;
 

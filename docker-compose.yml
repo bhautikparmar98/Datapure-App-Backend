@@ -23,7 +23,7 @@ services:
       environment:
         - PORT=80
         - NODE_ENV=development
-        - DATABASE_URL="mysql://user:password@datapure_mysql:3306/datapure-dev?schema=public"
+        - DATABASE_URL=mysql://user:password@datapure_mysql:3306/datapure-dev?schema=public
       restart: "no"
       depends_on:
         - datapure_mysql
