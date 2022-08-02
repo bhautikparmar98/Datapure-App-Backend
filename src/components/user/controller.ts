@@ -104,12 +104,19 @@ const getAllUsers: RequestHandler = async (req, res) => {
       return res.status(403).send(appResponse('You are not allowed', false));
 
     // queries
-    const usersCount = await db.user.count();
+    const usersCount = await db.user.count({
+      where: {
+        role: { not: Roles.SUPER_ADMIN },
+      },
+    });
     const users = await db.user.findMany({
       skip: updatedSkip,
       take: updatedTake,
       include: {
         clientInfo: true,
+      },
+      where: {
+        role: { not: Roles.SUPER_ADMIN },
       },
     });
 
@@ -125,11 +132,11 @@ const getAllUsers: RequestHandler = async (req, res) => {
 
 const inviteUser: RequestHandler = async (req, res) => {
   try {
-    const { email, firstName, lastName, company } = req.body;
+    const { email, firstName, lastName, company, role } = req.body;
 
     // check the data
     const permission = ac.can(req.user.role).createAny('user');
-    if (!permission.granted)
+    if (!permission.granted || role === Roles.SUPER_ADMIN)
       return res.status(403).send(appResponse('You are not allowed', false));
 
     // get user with email
@@ -158,7 +165,7 @@ const inviteUser: RequestHandler = async (req, res) => {
         iv,
         firstName,
         lastName,
-        role: Roles.CLIENT,
+        role,
         clientInfoId: createdClientInfo.id,
       },
     });
@@ -194,6 +201,8 @@ const getPassword: RequestHandler = async (req, res) => {
     // check if there is a user with the same email
     if (!user) return res.status(400).send(appResponse('Invalid User.', false));
 
+    if (user.role === Roles.SUPER_ADMIN)
+      return res.status(403).send(appResponse('Not allowed.', false));
     // queries
 
     const password = UserService.decrypt({
