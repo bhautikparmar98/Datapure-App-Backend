@@ -24,6 +24,10 @@ services:
         - PORT=80
         - NODE_ENV=development
         - DATABASE_URL=mysql://user:password@datapure_mysql:3306/datapure-dev?schema=public
+        - JWT_SECRET=secretword
+        - ENCRYPT_SECRET=vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3
+        - GMAIL_APP_PASSWORD=eejxvfmulcaerotu
+        - GMAIL_EMAIL=datapuretech@gmail.com
       restart: "no"
       depends_on:
         - datapure_mysql

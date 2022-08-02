@@ -22,4 +22,8 @@ export default {
   },
   databaseURL: process.env.MONGODB_URI!,
   clientURL: process.env.CLIENT_URL || 'http://localhost:3000',
+  jwtSecret: process.env.JWT_SECRET!,
+  encryptSecret: process.env.ENCRYPT_SECRET!,
+  gmailAppPassword: process.env.GMAIL_APP_PASSWORD!,
+  gmailEmail: process.env.GMAIL_EMAIL!,
 };

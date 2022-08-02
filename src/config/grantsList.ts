@@ -66,4 +66,19 @@ export const grantList = [
     action: 'create:any',
     attributes: '*',
   },
+
+  // User section
+  {
+    role: roles.SUPER_ADMIN,
+    resource: 'user',
+    action: 'read:any',
+    attributes: '*',
+  },
+  // User section
+  {
+    role: roles.SUPER_ADMIN,
+    resource: 'user',
+    action: 'create:any',
+    attributes: '*',
+  },
 ];

@@ -18,6 +18,7 @@ model User {
   firstName      String
   lastName       String
   hashedPassword String
+  iv             String
 
   role  String
   phone String?
