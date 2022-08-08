@@ -12,6 +12,15 @@ services:
         - MYSQL_PASSWORD=password
       ports:
         - '3307:3306'
+    datapure_dev_mongo:
+      image: mongo
+      container_name: datapure_dev_mongo
+      environment:
+        - MONGO_INITDB_DATABASE=datapure
+      volumes:
+        - datapure-mongo-volume:/data/db
+      ports:
+        - '27018:27017'
 
     datapure_dev:
       build: .
@@ -23,7 +32,9 @@ services:
       environment:
         - PORT=80
         - NODE_ENV=development
+        - SQL_DATABASE_URL=mysql://user:password@datapure_mysql:3306/datapure-dev?schema=public
         - DATABASE_URL=mysql://user:password@datapure_mysql:3306/datapure-dev?schema=public
+        - MONGO_DATABASE_URL=mongodb://datapure_dev_mongo:27017/datapure
         - JWT_SECRET=secretword
         - ENCRYPT_SECRET=vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3
         - GMAIL_APP_PASSWORD=eejxvfmulcaerotu
@@ -35,3 +46,4 @@ services:
 
 volumes:
   datapure_mysql-volume:
+  datapure-mongo-volume:

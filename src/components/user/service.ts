@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import generator from 'generate-password';
+import db from '../../dbClient';
 
 import config from '../../config';
 import { User } from '@prisma/client';
@@ -112,6 +113,25 @@ const sendInvitationMail = async (user: User, password: string) => {
   );
 };
 
+const isAdmin = async (userId: number): Promise<boolean> => {
+  const admin = db.user.findFirst({ where: { id: userId } });
+  return admin !== undefined;
+};
+
+const incrementNumberOfWorkingProjects = async (adminId: number) => {
+  await db.user.update({
+    where: { id: adminId },
+    data: { numberOfActiveProjects: { increment: 1 } },
+  });
+};
+
+const decrementNumberOfWorkingProjects = async (adminId: number) => {
+  await db.user.update({
+    where: { id: adminId },
+    data: { numberOfActiveProjects: { decrement: 1 } },
+  });
+};
+
 export default {
   getHashedPassword,
   generateAuthToken,
@@ -120,4 +140,7 @@ export default {
   decrypt,
   generateRandomPassword,
   sendInvitationMail,
+  isAdmin,
+  incrementNumberOfWorkingProjects,
+  decrementNumberOfWorkingProjects,
 };

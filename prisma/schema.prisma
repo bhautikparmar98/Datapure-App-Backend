@@ -1,6 +1,6 @@
 datasource db {
   provider          = "mysql"
-  url               = env("DATABASE_URL")
+  url               = env("SQL_DATABASE_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
@@ -14,11 +14,13 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt()
 
-  email          String @unique
-  firstName      String
-  lastName       String
-  hashedPassword String
-  iv             String
+  email                  String  @unique
+  firstName              String
+  lastName               String
+  hashedPassword         String
+  iv                     String
+  active                 Boolean @default(false)
+  numberOfActiveProjects Int     @default(0)
 
   role  String
   phone String?

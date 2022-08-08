@@ -26,4 +26,14 @@ export default {
   encryptSecret: process.env.ENCRYPT_SECRET!,
   gmailAppPassword: process.env.GMAIL_APP_PASSWORD!,
   gmailEmail: process.env.GMAIL_EMAIL!,
+  mongoDatabaseURL: process.env.MONGO_DATABASE_URL!,
+  sqlDatabaseURL: process.env.SQL_DATABASE_URL!,
+  aws: {
+    keyId: process.env.AWS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    s3: {
+      bucket: process.env.S3_BUCKET!,
+      region: process.env.S3_REGION!,
+    },
+  },
 };

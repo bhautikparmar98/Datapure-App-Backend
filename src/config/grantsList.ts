@@ -20,14 +20,12 @@ export const grantList = [
     action: 'delete:any',
     attributes: '*',
   },
-
   {
-    role: roles.ADMIN,
+    role: roles.SUPER_ADMIN,
     resource: 'project',
-    action: 'read:any',
+    action: 'create:any',
     attributes: '*',
   },
-
   {
     role: roles.QA,
     resource: 'project',
@@ -63,7 +61,7 @@ export const grantList = [
   {
     role: roles.CLIENT,
     resource: 'project',
-    action: 'create:any',
+    action: 'create:own',
     attributes: '*',
   },
 
@@ -74,11 +72,56 @@ export const grantList = [
     action: 'read:any',
     attributes: '*',
   },
-  // User section
   {
     role: roles.SUPER_ADMIN,
     resource: 'user',
     action: 'create:any',
+    attributes: '*',
+  },
+
+  // Image section
+  {
+    role: roles.SUPER_ADMIN,
+    resource: 'image',
+    action: 'read:any',
+    attributes: '*',
+  },
+  {
+    role: roles.SUPER_ADMIN,
+    resource: 'image',
+    action: 'create:any',
+    attributes: '*',
+  },
+  {
+    role: roles.CLIENT,
+    resource: 'image',
+    action: 'read:own',
+    attributes: '*',
+  },
+  {
+    role: roles.CLIENT,
+    resource: 'image',
+    action: 'create:own',
+    attributes: '*',
+  },
+  {
+    role: roles.CLIENT,
+    resource: 'image',
+    action: 'delete:own',
+    attributes: '*',
+  },
+  {
+    role: roles.CLIENT,
+    resource: 'image',
+    action: 'update:own',
+    attributes: '*',
+  },
+
+  // ADMIN section
+  {
+    role: roles.SUPER_ADMIN,
+    resource: 'admin',
+    action: 'read:any',
     attributes: '*',
   },
 ];

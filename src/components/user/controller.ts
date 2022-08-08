@@ -7,6 +7,7 @@ import { appResponse } from '../../utils';
 import UserService from './service';
 import ac from '../../utils/accesscontrol';
 import { ClientInfo, User } from '@prisma/client';
+import { Project } from '../project/model';
 
 // only client will use this method to create a new register
 const registerClient: RequestHandler = async (req, res) => {
@@ -37,6 +38,7 @@ const registerClient: RequestHandler = async (req, res) => {
         firstName,
         lastName,
         role: Roles.CLIENT,
+        active: true,
         clientInfoId: createdClientInfo.id,
       },
     });
@@ -45,7 +47,7 @@ const registerClient: RequestHandler = async (req, res) => {
   } catch (err) {
     logger.error(err);
 
-    const response = appResponse('Error creating user.', false);
+    const response = appResponse('Error registering user.', false);
     res.status(500).send(response);
   }
 };
@@ -86,7 +88,7 @@ const login: RequestHandler = async (req, res) => {
   } catch (err) {
     logger.error(err);
 
-    const response = appResponse('Error creating user.', false);
+    const response = appResponse('Error logging user.', false);
     res.status(500).send(response);
   }
 };
@@ -166,6 +168,7 @@ const inviteUser: RequestHandler = async (req, res) => {
         firstName,
         lastName,
         role,
+        active: true,
         clientInfoId: createdClientInfo.id,
       },
     });
@@ -179,7 +182,7 @@ const inviteUser: RequestHandler = async (req, res) => {
   } catch (err) {
     logger.error(err);
 
-    const response = appResponse('Error creating user.', false);
+    const response = appResponse('Error inviting user.', false);
     res.status(500).send(response);
   }
 };
@@ -213,22 +216,93 @@ const getPassword: RequestHandler = async (req, res) => {
     res.send({ password });
   } catch (error) {
     console.log('error');
-    const response = appResponse('Error get all users', false);
+    const response = appResponse('Error getting password', false);
+    res.status(500).send(response);
+  }
+};
+
+const getClientsProjects: RequestHandler = async (req, res) => {
+  try {
+    const permission = ac.can(req.user.role).readOwn('project');
+    if (!permission.granted)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    const { id } = req.params;
+
+    const projects = await Project.find({ userId: id });
+    const payloadProjects = projects.map((p) => p.toJSON());
+
+    res.status(200).send({ projects: payloadProjects });
+  } catch (err) {
+    logger.error(err);
+    const response = appResponse('Error getting client projects', false);
+    res.status(500).send(response);
+  }
+};
+
+const getClients: RequestHandler = async (req, res) => {
+  try {
+    const users = await db.user.findMany({
+      include: {
+        clientInfo: true,
+      },
+      where: {
+        role: Roles.CLIENT,
+        active: true,
+      },
+    });
+
+    const updatedUsers = users.map((u) => mapUserToDTO(u));
+
+    res.send({ clients: updatedUsers });
+  } catch (error) {
+    console.log('error');
+    const response = appResponse('Error get all clients', false);
+    res.status(500).send(response);
+  }
+};
+
+const getAdmins: RequestHandler = async (req, res) => {
+  try {
+    const admins = await db.user.findMany({
+      where: {
+        role: Roles.ADMIN,
+        active: true,
+      },
+    });
+
+    const updatedUsers = admins.map((u) => mapUserToDTO(u));
+
+    res.send({ admins: updatedUsers });
+  } catch (error) {
+    console.log('error');
+    const response = appResponse('Error get all Admins', false);
     res.status(500).send(response);
   }
 };
 
 const mapUserToDTO = (
   user: User & {
-    clientInfo: ClientInfo | null;
+    clientInfo?: ClientInfo | null;
   }
 ) => ({
   id: user.id,
   firstName: user.firstName,
   lastName: user.lastName,
+  fullName: `${user.firstName} ${user.lastName}`,
   role: user.role,
   email: user.email,
+  numberOfActiveProjects: user.numberOfActiveProjects,
   clientInfo: user.clientInfo,
 });
 
-export { registerClient, login, getAllUsers, inviteUser, getPassword };
+export {
+  registerClient,
+  login,
+  getAllUsers,
+  inviteUser,
+  getPassword,
+  getClientsProjects,
+  getClients,
+  getAdmins,
+};

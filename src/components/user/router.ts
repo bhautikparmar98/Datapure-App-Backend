@@ -1,5 +1,6 @@
 import { celebrate } from 'celebrate';
 import { Router } from 'express';
+import accessControlMiddleware from '../../middlewares/ac';
 import auth from '../../middlewares/auth';
 import * as controller from './controller';
 import {
@@ -29,5 +30,23 @@ router.post(
 );
 
 router.get('/:id/password', controller.getPassword);
+router.get('/:id/project', controller.getClientsProjects);
+router.get(
+  '/clients',
+  accessControlMiddleware.check({
+    resource: 'user',
+    action: 'read',
+  }),
+  controller.getClients
+);
+
+router.get(
+  '/admins',
+  accessControlMiddleware.check({
+    resource: 'admin',
+    action: 'read',
+  }),
+  controller.getAdmins
+);
 
 export default router;

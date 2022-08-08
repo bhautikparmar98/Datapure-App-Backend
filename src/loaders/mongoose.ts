@@ -3,7 +3,6 @@ import { Db } from 'mongodb';
 import config from '../config';
 
 export default async (): Promise<Db> => {
-  // const connection = await mongoose.connect(config.databaseURL);
-  // return connection.connection.db;
-  return Promise.resolve(true as any);
+  const connection = await mongoose.connect(config.mongoDatabaseURL);
+  return connection.connection.db;
 };
