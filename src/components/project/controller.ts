@@ -87,7 +87,14 @@ const addImages: RequestHandler = async (req, res) => {
     project.imagesCount = project.imagesCount + imagesIds.length;
     project.annotationCount = project.annotationCount + imagesIds.length;
 
-    project.save();
+    await project.save();
+
+    // update the annotators with the new images
+    // we don't wait for it's completion
+    ImageService.equallyDistributeImagesBetweenAnnotators(
+      project._id.toString(),
+      project.assignedAnnotators
+    );
 
     return res.status(200).send({ imagesIds });
   } catch (error) {
@@ -209,6 +216,7 @@ const assignAnnotatorsToProject: RequestHandler = async (req, res) => {
     await project.save();
 
     // distribute images between annotators
+    // we don't wait here for the completion
     ImageService.equallyDistributeImagesBetweenAnnotators(
       project._id.toString(),
       annotatorIds
