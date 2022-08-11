@@ -36,7 +36,15 @@ const ProjectSchema = new Schema<IProject>(
       type: Number,
       required: true,
     },
+    annotationInProgressCount: {
+      type: Number,
+      required: true,
+    },
     qaCount: {
+      type: Number,
+      required: true,
+    },
+    redoCount: {
       type: Number,
       required: true,
     },
@@ -49,11 +57,20 @@ const ProjectSchema = new Schema<IProject>(
       required: true,
     },
 
+    finished: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+
     classes: [ProjectClassSchema],
     imagesIds: [{ type: Schema.Types.ObjectId, ref: 'Image' }],
     adminId: {
       type: Number,
     },
+
+    assignedAnnotators: [{ type: Number }],
+    assignedQAs: [{ type: Number }],
   },
   { timestamps: true }
 );

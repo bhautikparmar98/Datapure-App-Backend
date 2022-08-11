@@ -8,4 +8,6 @@ export interface IImage {
   projectId: ObjectId;
   createdAt: Date;
   updatedAt: Date;
+  annotatorId?: number;
+  qaId?: number;
 }

@@ -2,12 +2,13 @@ import { RequestHandler } from 'express';
 import db from '../../dbClient';
 import logger from '../../loaders/logger';
 
-import { Roles } from '../../constants';
+import { Resources, Roles } from '../../constants';
 import { appResponse } from '../../utils';
 import UserService from './service';
 import ac from '../../utils/accesscontrol';
 import { ClientInfo, User } from '@prisma/client';
 import { Project } from '../project/model';
+import ImageService from '../image/service';
 
 // only client will use this method to create a new register
 const registerClient: RequestHandler = async (req, res) => {
@@ -223,7 +224,7 @@ const getPassword: RequestHandler = async (req, res) => {
 
 const getClientsProjects: RequestHandler = async (req, res) => {
   try {
-    const permission = ac.can(req.user.role).readOwn('project');
+    const permission = ac.can(req.user.role).readOwn(Resources.PROJECT);
     if (!permission.granted)
       return res.status(403).send(appResponse('You are not allowed', false));
 
@@ -240,20 +241,86 @@ const getClientsProjects: RequestHandler = async (req, res) => {
   }
 };
 
+const getAdminProjects: RequestHandler = async (req, res) => {
+  try {
+    const permission = ac.can(req.user.role).readOwn(Resources.PROJECT);
+    if (!permission.granted)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    const { id } = req.user;
+
+    const projects = await Project.find({ adminId: id, finished: false });
+    const payloadProjects = projects.map((p) => p.toJSON());
+
+    res.status(200).send({ projects: payloadProjects });
+  } catch (err) {
+    logger.error(err);
+    const response = appResponse('Error getting admin projects', false);
+    res.status(500).send(response);
+  }
+};
+
+const getQAProjects: RequestHandler = async (req, res) => {
+  try {
+    const permission = ac.can(req.user.role).readOwn(Resources.PROJECT);
+    if (!permission.granted)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    const { id } = req.user;
+    const countsArr = [];
+
+    const projects = await Project.find({ assignedQAs: id, finished: false });
+    const payloadProjects = projects.map((p) => p.toJSON());
+
+    for (let i = 0; i < payloadProjects.length; i++) {
+      const p = payloadProjects[i];
+      const counts = await ImageService.getQAStatics(p._id as any, id);
+      countsArr.push({ ...counts, projectId: p._id });
+    }
+
+    res.status(200).send({ projects: payloadProjects, QACounts: countsArr });
+  } catch (err) {
+    logger.error(err);
+    const response = appResponse('Error getting admin projects', false);
+    res.status(500).send(response);
+  }
+};
+
+const getAnnotatorProjects: RequestHandler = async (req, res) => {
+  try {
+    const permission = ac.can(req.user.role).readOwn(Resources.PROJECT);
+    if (!permission.granted)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    const { id } = req.user;
+    const countsArr = [];
+
+    const projects = await Project.find({
+      assignedAnnotators: id,
+      finished: false,
+    });
+    const payloadProjects = projects.map((p) => p.toJSON());
+
+    for (let i = 0; i < payloadProjects.length; i++) {
+      const p = payloadProjects[i];
+      const counts = await ImageService.getAnnotatorStatics(p._id as any, id);
+      countsArr.push({ ...counts, projectId: p._id });
+    }
+
+    res
+      .status(200)
+      .send({ projects: payloadProjects, annotatorCounts: countsArr });
+  } catch (err) {
+    logger.error(err);
+    const response = appResponse('Error getting admin projects', false);
+    res.status(500).send(response);
+  }
+};
+
 const getClients: RequestHandler = async (req, res) => {
   try {
-    const users = await db.user.findMany({
-      include: {
-        clientInfo: true,
-      },
-      where: {
-        role: Roles.CLIENT,
-        active: true,
-      },
-    });
-
+    const users = await getUsersByRole(Roles.CLIENT);
     const updatedUsers = users.map((u) => mapUserToDTO(u));
-
     res.send({ clients: updatedUsers });
   } catch (error) {
     console.log('error');
@@ -264,21 +331,52 @@ const getClients: RequestHandler = async (req, res) => {
 
 const getAdmins: RequestHandler = async (req, res) => {
   try {
-    const admins = await db.user.findMany({
-      where: {
-        role: Roles.ADMIN,
-        active: true,
-      },
-    });
-
+    const admins = await getUsersByRole(Roles.ADMIN);
     const updatedUsers = admins.map((u) => mapUserToDTO(u));
-
     res.send({ admins: updatedUsers });
   } catch (error) {
     console.log('error');
     const response = appResponse('Error get all Admins', false);
     res.status(500).send(response);
   }
+};
+
+const getQAs: RequestHandler = async (req, res) => {
+  try {
+    const qas = await getUsersByRole(Roles.QA);
+    const updatedUsers = qas.map((u) => mapUserToDTO(u));
+    res.send({ qas: updatedUsers });
+  } catch (error) {
+    console.log('error');
+    const response = appResponse('Error get all Admins', false);
+    res.status(500).send(response);
+  }
+};
+
+const getAnnotators: RequestHandler = async (req, res) => {
+  try {
+    const annotators = await getUsersByRole(Roles.ANNOTATOR);
+    const updatedUsers = annotators.map((u) => mapUserToDTO(u));
+    res.send({ annotators: updatedUsers });
+  } catch (error) {
+    console.log('error');
+    const response = appResponse('Error get all Admins', false);
+    res.status(500).send(response);
+  }
+};
+
+// ------------------ PRIVATE METHODS ---------------
+
+const getUsersByRole = async (role: keyof typeof Roles) => {
+  return await db.user.findMany({
+    include: {
+      clientInfo: true,
+    },
+    where: {
+      role,
+      active: true,
+    },
+  });
 };
 
 const mapUserToDTO = (
@@ -305,4 +403,9 @@ export {
   getClientsProjects,
   getClients,
   getAdmins,
+  getAdminProjects,
+  getQAs,
+  getAnnotators,
+  getQAProjects,
+  getAnnotatorProjects,
 };

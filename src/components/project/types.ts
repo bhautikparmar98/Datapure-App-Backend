@@ -13,12 +13,18 @@ export interface IProject {
   // status static
   imagesCount: number;
   annotationCount: number;
+  annotationInProgressCount: number;
   qaCount: number;
+  redoCount: number;
   clientReviewCount: number;
   doneCount: number;
 
   // admins
   adminId: number;
+  assignedAnnotators: number[];
+  assignedQAs: number[];
+
+  finished: boolean;
 }
 
 export interface ProjectClass {

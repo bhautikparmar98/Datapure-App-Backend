@@ -1,10 +1,18 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import generator from 'generate-password';
+import { Project } from './model';
 
-import config from '../../config';
-import { User } from '@prisma/client';
-import MailService from '../shared/services/mail';
+const getRemovedIds = (prevIds: number[], newIds: number[]): number[] => {
+  return prevIds.filter((prevId) => !newIds.includes(prevId));
+};
 
-export default {};
+const getAddedIds = (prevIds: number[], newIds: number[]): number[] => {
+  return newIds.filter((newId) => !prevIds.includes(newId));
+};
+
+const getQAsIds = async (projectId: string) => {
+  const project = await Project.findById(projectId);
+  return project?.assignedQAs;
+};
+
+const ProjectService = { getRemovedIds, getAddedIds, getQAsIds };
+
+export default ProjectService;

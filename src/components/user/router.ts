@@ -1,5 +1,6 @@
 import { celebrate } from 'celebrate';
 import { Router } from 'express';
+import { Actions, Resources } from '../../constants';
 import accessControlMiddleware from '../../middlewares/ac';
 import auth from '../../middlewares/auth';
 import * as controller from './controller';
@@ -28,14 +29,15 @@ router.post(
   celebrate({ body: UserInviteSchema }),
   controller.inviteUser
 );
+router.get('/admin/project', controller.getAdminProjects);
+router.get('/qa/project', controller.getQAProjects);
+router.get('/annotator/project', controller.getAnnotatorProjects);
 
-router.get('/:id/password', controller.getPassword);
-router.get('/:id/project', controller.getClientsProjects);
 router.get(
   '/clients',
   accessControlMiddleware.check({
-    resource: 'user',
-    action: 'read',
+    resource: Resources.USER,
+    action: Actions.READ,
   }),
   controller.getClients
 );
@@ -43,10 +45,31 @@ router.get(
 router.get(
   '/admins',
   accessControlMiddleware.check({
-    resource: 'admin',
-    action: 'read',
+    resource: Resources.ADMIN,
+    action: Actions.READ,
   }),
   controller.getAdmins
 );
+
+router.get(
+  '/qa',
+  accessControlMiddleware.check({
+    resource: Resources.QA,
+    action: Actions.READ,
+  }),
+  controller.getQAs
+);
+
+router.get(
+  '/annotator',
+  accessControlMiddleware.check({
+    resource: Resources.ANNOTATOR,
+    action: Actions.READ,
+  }),
+  controller.getAnnotators
+);
+
+router.get('/:id/password', controller.getPassword);
+router.get('/:id/project', controller.getClientsProjects);
 
 export default router;

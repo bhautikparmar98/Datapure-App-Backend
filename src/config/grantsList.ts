@@ -1,66 +1,80 @@
 import { AccessControl } from 'accesscontrol';
+import { Actions, Resources } from '../constants';
 import * as roles from '../constants/roles';
 
 export const grantList = [
   {
     role: roles.SUPER_ADMIN,
-    resource: 'project',
+    resource: Resources.PROJECT,
     action: 'read:any',
     attributes: '*',
   },
+
   {
     role: roles.SUPER_ADMIN,
-    resource: 'project',
+    resource: Resources.PROJECT,
     action: 'update:any',
     attributes: '*',
   },
   {
     role: roles.SUPER_ADMIN,
-    resource: 'project',
+    resource: Resources.PROJECT,
     action: 'delete:any',
     attributes: '*',
   },
   {
     role: roles.SUPER_ADMIN,
-    resource: 'project',
+    resource: Resources.PROJECT,
     action: 'create:any',
     attributes: '*',
   },
   {
+    role: roles.ADMIN,
+    resource: Resources.PROJECT,
+    action: Actions.READ_OWN,
+    attributes: '*',
+  },
+  {
+    role: roles.ADMIN,
+    resource: Resources.PROJECT,
+    action: Actions.UPDATE_OWN,
+    attributes: '*',
+  },
+  {
     role: roles.QA,
-    resource: 'project',
-    action: 'read:any',
+    resource: Resources.PROJECT,
+    action: Actions.READ_OWN,
     attributes: '*',
   },
 
   {
-    role: roles.ANNATATOR,
-    resource: 'project',
-    action: 'read:any',
+    role: roles.ANNOTATOR,
+    resource: Resources.PROJECT,
+    action: Actions.READ_OWN,
     attributes: '*',
   },
 
   {
     role: roles.CLIENT,
-    resource: 'project',
-    action: 'read:own',
+    resource: Resources.PROJECT,
+    action: Actions.READ_OWN,
     attributes: '*',
   },
   {
     role: roles.CLIENT,
-    resource: 'project',
+    resource: Resources.PROJECT,
     action: 'update:own',
     attributes: '*',
   },
   {
     role: roles.CLIENT,
-    resource: 'project',
+    resource: Resources.PROJECT,
     action: 'delete:own',
     attributes: '*',
   },
   {
     role: roles.CLIENT,
-    resource: 'project',
+    resource: Resources.PROJECT,
     action: 'create:own',
     attributes: '*',
   },
@@ -87,6 +101,12 @@ export const grantList = [
     attributes: '*',
   },
   {
+    role: roles.ADMIN,
+    resource: 'image',
+    action: 'read:any',
+    attributes: '*',
+  },
+  {
     role: roles.SUPER_ADMIN,
     resource: 'image',
     action: 'create:any',
@@ -95,7 +115,7 @@ export const grantList = [
   {
     role: roles.CLIENT,
     resource: 'image',
-    action: 'read:own',
+    action: Actions.READ_OWN,
     attributes: '*',
   },
   {
@@ -122,6 +142,32 @@ export const grantList = [
     role: roles.SUPER_ADMIN,
     resource: 'admin',
     action: 'read:any',
+    attributes: '*',
+  },
+
+  // QA & Annotators
+  {
+    role: roles.SUPER_ADMIN,
+    resource: Resources.QA,
+    action: Actions.READ_ANY,
+    attributes: '*',
+  },
+  {
+    role: roles.SUPER_ADMIN,
+    resource: Resources.ANNOTATOR,
+    action: Actions.READ_ANY,
+    attributes: '*',
+  },
+  {
+    role: roles.ADMIN,
+    resource: Resources.QA,
+    action: Actions.READ_ANY,
+    attributes: '*',
+  },
+  {
+    role: roles.ADMIN,
+    resource: Resources.ANNOTATOR,
+    action: Actions.READ_ANY,
     attributes: '*',
   },
 ];

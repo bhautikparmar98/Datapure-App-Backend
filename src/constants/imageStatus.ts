@@ -1,4 +1,6 @@
-export const ANNOTATION = 'ANNOTATION';
-export const QA = 'QA';
-export const CLIENT_REVIEW = 'CLIENT_REVIEW';
+export const PENDING_ANNOTATION = 'PENDING_ANNOTATION';
+export const ANNOTATION_INPROGRESS = 'ANNOTATION_INPROGRESS';
+export const PENDING_QA = 'PENDING_QA';
+export const PENDING_REDO = 'PENDING_REDO';
+export const PENDING_CLIENT_REVIEW = 'PENDING_CLIENT_REVIEW';
 export const DONE = 'DONE';

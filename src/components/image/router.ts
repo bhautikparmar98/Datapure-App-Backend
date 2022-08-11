@@ -10,5 +10,6 @@ const router = Router();
 router.use(auth);
 
 router.post('/sign', celebrate({ body: ImageSignSchema }), controller.signUrl);
+router.put('/:id/annotation/finish', controller.finishAnnotation);
 
 export default router;

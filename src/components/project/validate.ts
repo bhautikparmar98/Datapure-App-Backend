@@ -39,3 +39,11 @@ export const AddImageToProjectSchema = Joi.object({
 export const AssignAdminsToProjectSchema = Joi.object({
   adminId: Joi.number(),
 });
+
+export const AssignQAToProjectSchema = Joi.object({
+  qaIds: Joi.array().items(Joi.number()),
+});
+
+export const AssignAnnotatorsToProjectSchema = Joi.object({
+  annotatorIds: Joi.array().items(Joi.number()),
+});

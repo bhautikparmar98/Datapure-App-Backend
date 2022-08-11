@@ -20,6 +20,6 @@ export const UserInviteSchema = Joi.object({
   email: Joi.string().email().required(),
   company: Joi.string().min(2).max(50).required(),
   role: Joi.string()
-    .valid(Roles.ADMIN, Roles.ANNATATOR, Roles.CLIENT, Roles.QA)
+    .valid(Roles.ADMIN, Roles.ANNOTATOR, Roles.CLIENT, Roles.QA)
     .required(),
 });

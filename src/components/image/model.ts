@@ -25,6 +25,12 @@ const ImageSchema = new Schema<IImage>(
       required: true,
       trim: true,
     },
+    annotatorId: {
+      type: Number,
+    },
+    qaId: {
+      type: Number,
+    },
   },
   {
     timestamps: true,
