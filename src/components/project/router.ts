@@ -19,6 +19,8 @@ router.use(auth);
 
 router.post('/', celebrate({ body: CreateProject }), controller.createProject);
 router.get('/:id/images', controller.getProjectImages);
+router.get('/:id/annotator/images', controller.getAnnotatorImagesForProject);
+
 router.post(
   '/:id/images',
   celebrate({ body: AddImageToProjectSchema }),

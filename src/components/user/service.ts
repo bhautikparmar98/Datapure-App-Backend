@@ -7,6 +7,7 @@ import db from '../../dbClient';
 import config from '../../config';
 import { User } from '@prisma/client';
 import MailService from '../shared/services/mail';
+import { Roles } from '../../constants';
 
 interface AuthToken {
   email: string;
@@ -114,8 +115,13 @@ const sendInvitationMail = async (user: User, password: string) => {
 };
 
 const isAdmin = async (userId: number): Promise<boolean> => {
-  const admin = db.user.findFirst({ where: { id: userId } });
-  return admin !== undefined;
+  const admin = await db.user.findFirst({ where: { id: userId } });
+  return admin !== undefined && admin?.role === Roles.ADMIN;
+};
+
+const isAnnotator = async (userId: number): Promise<boolean> => {
+  const annotator = await db.user.findFirst({ where: { id: userId } });
+  return annotator !== undefined && annotator?.role === Roles.ANNOTATOR;
 };
 
 const incrementNumberOfWorkingProjects = async (adminId: number) => {
@@ -143,4 +149,5 @@ export default {
   isAdmin,
   incrementNumberOfWorkingProjects,
   decrementNumberOfWorkingProjects,
+  isAnnotator,
 };

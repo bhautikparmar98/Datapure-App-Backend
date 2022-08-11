@@ -229,6 +229,38 @@ const assignAnnotatorsToProject: RequestHandler = async (req, res) => {
   }
 };
 
+const getAnnotatorImagesForProject: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const userId = req.user.id;
+
+    const isAnnotator = UserService.isAnnotator(userId);
+
+    if (!isAnnotator)
+      return res.status(403).send(appResponse('You are not allowed.', false));
+
+    const images = await ImageService.getProjectImageForAnnotator(id, userId);
+    const imagesPayload = images.map((img) => img.toJSON());
+
+    res.status(200).send({ images: imagesPayload });
+  } catch (err) {
+    logger.error(err);
+    const response = appResponse('Error sign images.', false);
+    res.status(500).send(response);
+  }
+};
+
+export {
+  createProject,
+  getProjectImages,
+  addImages,
+  assignAdminToProject,
+  assignQAsToProject,
+  assignAnnotatorsToProject,
+  getAnnotatorImagesForProject,
+};
+
 // --*-------------- PRIVATE
 
 const updateWorkingProjectNumberForMembers = async (
@@ -264,13 +296,4 @@ const updateWorkingProjectNumberForMembers = async (
 
     await Promise.all(promises);
   }
-};
-
-export {
-  createProject,
-  getProjectImages,
-  addImages,
-  assignAdminToProject,
-  assignQAsToProject,
-  assignAnnotatorsToProject,
 };

@@ -232,6 +232,14 @@ const assignQA = async (qaIds: number[], projectId: string, id: string) => {
   await await Image.findByIdAndUpdate(id, { $set: { qaId: minimumId } });
 };
 
+const getProjectImageForAnnotator = async (
+  projectId: string,
+  annotatorId: number
+) => {
+  const images = await Image.find({ projectId, annotatorId });
+  return images;
+};
+
 const ImageService = {
   getSignedUrl,
   createImages,
@@ -240,5 +248,6 @@ const ImageService = {
   getQAStatics,
   getAnnotatorStatics,
   assignQA,
+  getProjectImageForAnnotator,
 };
 export default ImageService;
