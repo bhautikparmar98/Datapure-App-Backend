@@ -13,6 +13,11 @@ const getQAsIds = async (projectId: string) => {
   return project?.assignedQAs;
 };
 
-const ProjectService = { getRemovedIds, getAddedIds, getQAsIds };
+const getOwnerId = async (projectId: string) => {
+  const project = await Project.findById(projectId);
+  return project?.userId;
+};
+
+const ProjectService = { getRemovedIds, getAddedIds, getQAsIds, getOwnerId };
 
 export default ProjectService;
