@@ -90,6 +90,11 @@ const qaApproveAnnotation: RequestHandler = async (req, res) => {
 
     image.status = ImageStatus.PENDING_CLIENT_REVIEW;
 
+    ProjectService.updateCount(image.projectId.toString(), {
+      qaCount: -1,
+      clientReviewCount: 1,
+    });
+
     await image.save();
 
     res.status(200).send({ success: true });

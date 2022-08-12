@@ -18,6 +18,26 @@ const getOwnerId = async (projectId: string) => {
   return project?.userId;
 };
 
-const ProjectService = { getRemovedIds, getAddedIds, getQAsIds, getOwnerId };
+const updateCount = async (
+  projectId: string,
+  counts: {
+    annotationCount?: number;
+    annotationInProgressCount?: number;
+    qaCount?: number;
+    redoCount?: number;
+    clientReviewCount?: number;
+    doneCount?: number;
+  }
+) => {
+  await Project.findByIdAndUpdate;
+};
+
+const ProjectService = {
+  getRemovedIds,
+  getAddedIds,
+  getQAsIds,
+  getOwnerId,
+  updateCount,
+};
 
 export default ProjectService;

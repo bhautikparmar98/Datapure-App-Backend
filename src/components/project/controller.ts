@@ -232,7 +232,7 @@ const assignAnnotatorsToProject: RequestHandler = async (req, res) => {
 const getAnnotatorImagesForProject: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-
+    const { take } = req.query;
     const userId = req.user.id;
 
     const isAnnotator = UserService.isAnnotator(userId);
@@ -240,13 +240,87 @@ const getAnnotatorImagesForProject: RequestHandler = async (req, res) => {
     if (!isAnnotator)
       return res.status(403).send(appResponse('You are not allowed.', false));
 
-    const images = await ImageService.getProjectImageForAnnotator(id, userId);
-    const imagesPayload = images.map((img) => img.toJSON());
+    const images = await ImageService.getProjectImageForAnnotator(
+      id,
+      userId,
+      parseInt(take?.toString() || '100')
+    );
+
+    const imagesPayload = images.map((img) => ({
+      _id: img._id.toString(),
+      fileName: img.fileName,
+      src: img.src,
+      project: img.projectId,
+    }));
 
     res.status(200).send({ images: imagesPayload });
   } catch (err) {
     logger.error(err);
-    const response = appResponse('Error sign images.', false);
+    const response = appResponse('Error getting annotator images', false);
+    res.status(500).send(response);
+  }
+};
+
+const getAnnotatorRedoImagesForProject: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { take } = req.query;
+    const userId = req.user.id;
+
+    const isAnnotator = UserService.isAnnotator(userId);
+
+    if (!isAnnotator)
+      return res.status(403).send(appResponse('You are not allowed.', false));
+
+    const images = await ImageService.getProjectRedoImageForAnnotator(
+      id,
+      userId,
+      parseInt(take?.toString() || '100')
+    );
+
+    const imagesPayload = images.map((img) => ({
+      _id: img._id.toString(),
+      fileName: img.fileName,
+      src: img.src,
+      project: img.projectId,
+    }));
+
+    res.status(200).send({ images: imagesPayload });
+  } catch (err) {
+    logger.error(err);
+    const response = appResponse('Error getting annotator images', false);
+    res.status(500).send(response);
+  }
+};
+
+const getQAImagesForProject: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { take } = req.query;
+    const userId = req.user.id;
+
+    const isQA = UserService.isQA(userId);
+
+    if (!isQA)
+      return res.status(403).send(appResponse('You are not allowed.', false));
+
+    const images = await ImageService.getProjectImageForQA(
+      id,
+      userId,
+      parseInt(take?.toString() || '100')
+    );
+
+    const imagesPayload = images.map((img) => ({
+      _id: img._id.toString(),
+      fileName: img.fileName,
+      src: img.src,
+      project: img.projectId,
+    }));
+
+    res.status(200).send({ images: imagesPayload });
+  } catch (err) {
+    logger.error(err);
+    const response = appResponse('Error getting qa images', false);
     res.status(500).send(response);
   }
 };
@@ -259,6 +333,8 @@ export {
   assignQAsToProject,
   assignAnnotatorsToProject,
   getAnnotatorImagesForProject,
+  getQAImagesForProject,
+  getAnnotatorRedoImagesForProject,
 };
 
 // --*-------------- PRIVATE

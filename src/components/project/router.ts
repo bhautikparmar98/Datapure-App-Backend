@@ -20,6 +20,11 @@ router.use(auth);
 router.post('/', celebrate({ body: CreateProject }), controller.createProject);
 router.get('/:id/images', controller.getProjectImages);
 router.get('/:id/annotator/images', controller.getAnnotatorImagesForProject);
+router.get(
+  '/:id/annotator/images/redo',
+  controller.getAnnotatorRedoImagesForProject
+);
+router.get('/:id/qa/images', controller.getQAImagesForProject);
 
 router.post(
   '/:id/images',

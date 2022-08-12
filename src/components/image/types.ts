@@ -10,4 +10,5 @@ export interface IImage {
   updatedAt: Date;
   annotatorId?: number;
   qaId?: number;
+  annotationIds: number[];
 }

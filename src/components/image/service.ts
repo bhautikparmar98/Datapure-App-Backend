@@ -234,9 +234,50 @@ const assignQA = async (qaIds: number[], projectId: string, id: string) => {
 
 const getProjectImageForAnnotator = async (
   projectId: string,
-  annotatorId: number
+  annotatorId: number,
+  take = 10
 ) => {
-  const images = await Image.find({ projectId, annotatorId });
+  const images = await Image.find({
+    projectId,
+    annotatorId,
+    status: {
+      $in: [ImageStatus.PENDING_ANNOTATION, ImageStatus.ANNOTATION_INPROGRESS],
+    },
+  })
+    .limit(take)
+    .populate('projectId', 'classes');
+  return images;
+};
+
+const getProjectRedoImageForAnnotator = async (
+  projectId: string,
+  annotatorId: number,
+  take = 10
+) => {
+  const images = await Image.find({
+    projectId,
+    annotatorId,
+    status: ImageStatus.PENDING_REDO,
+  })
+    .limit(take)
+    .populate('projectId', 'classes');
+
+  return images;
+};
+
+const getProjectImageForQA = async (
+  projectId: string,
+  qaId: number,
+  take = 10
+) => {
+  const images = await Image.find({
+    projectId,
+    qaId,
+    status: ImageStatus.PENDING_QA,
+  })
+    .limit(take)
+    .populate('projectId', 'classes');
+
   return images;
 };
 
@@ -249,5 +290,7 @@ const ImageService = {
   getAnnotatorStatics,
   assignQA,
   getProjectImageForAnnotator,
+  getProjectImageForQA,
+  getProjectRedoImageForAnnotator,
 };
 export default ImageService;

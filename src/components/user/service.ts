@@ -124,6 +124,11 @@ const isAnnotator = async (userId: number): Promise<boolean> => {
   return annotator !== undefined && annotator?.role === Roles.ANNOTATOR;
 };
 
+const isQA = async (userId: number): Promise<boolean> => {
+  const annotator = await db.user.findFirst({ where: { id: userId } });
+  return annotator !== undefined && annotator?.role === Roles.QA;
+};
+
 const incrementNumberOfWorkingProjects = async (adminId: number) => {
   await db.user.update({
     where: { id: adminId },
@@ -150,4 +155,5 @@ export default {
   incrementNumberOfWorkingProjects,
   decrementNumberOfWorkingProjects,
   isAnnotator,
+  isQA,
 };

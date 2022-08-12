@@ -31,6 +31,8 @@ const ImageSchema = new Schema<IImage>(
     qaId: {
       type: Number,
     },
+
+    annotationIds: [{ type: Schema.Types.ObjectId, ref: 'Annotation' }],
   },
   {
     timestamps: true,
