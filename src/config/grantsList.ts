@@ -170,4 +170,24 @@ export const grantList = [
     action: Actions.READ_ANY,
     attributes: '*',
   },
+
+  // Annotation
+  {
+    role: roles.ANNOTATOR,
+    resource: Resources.ANNOTATION,
+    action: Actions.CREATE_OWN,
+    attributes: '*',
+  },
+  {
+    role: roles.QA,
+    resource: Resources.ANNOTATION,
+    action: Actions.READ_OWN,
+    attributes: '*',
+  },
+  {
+    role: roles.CLIENT,
+    resource: Resources.ANNOTATION,
+    action: Actions.CREATE_OWN,
+    attributes: '*',
+  },
 ];

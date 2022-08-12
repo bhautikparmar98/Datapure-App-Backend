@@ -5,3 +5,4 @@ export const CLIENT = 'client';
 export const ADMIN = 'admin';
 export const QA = 'qa';
 export const ANNOTATOR = 'annotator';
+export const ANNOTATION = 'ANNOTATION';

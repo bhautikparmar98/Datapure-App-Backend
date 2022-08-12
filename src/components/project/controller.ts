@@ -251,6 +251,7 @@ const getAnnotatorImagesForProject: RequestHandler = async (req, res) => {
       fileName: img.fileName,
       src: img.src,
       project: img.projectId,
+      annotations: img.annotationIds,
     }));
 
     res.status(200).send({ images: imagesPayload });

@@ -245,7 +245,8 @@ const getProjectImageForAnnotator = async (
     },
   })
     .limit(take)
-    .populate('projectId', 'classes');
+    .populate('projectId', 'classes')
+    .populate('annotationIds');
   return images;
 };
 

@@ -1,12 +1,19 @@
-import aws from 'aws-sdk';
-import config from '../../config';
-import { v4 as uuidv4 } from 'uuid';
-import mime from 'mime-types';
-import { IImage } from './types';
-import mongoose, { ObjectId } from 'mongoose';
-import { Image } from './model';
-import { ImageStatus } from '../../constants';
-import ProjectService from '../project/service';
+import { Annotation } from './model';
+import { IAnnotation } from './types';
 
-const AnnotationService = {};
+const createAnnotations = async (
+  annotations: IAnnotation[]
+): Promise<any[]> => {
+  const results = await Annotation.insertMany(annotations);
+  return results.map((r) => r._id);
+};
+
+const removeAllForImage = async (imageId: string): Promise<void> => {
+  await Annotation.deleteMany({ imageId });
+};
+
+const AnnotationService = {
+  createAnnotations,
+  removeAllForImage,
+};
 export default AnnotationService;

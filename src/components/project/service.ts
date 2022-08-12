@@ -29,7 +29,13 @@ const updateCount = async (
     doneCount?: number;
   }
 ) => {
-  await Project.findByIdAndUpdate;
+  const data: any = { ...counts };
+
+  Object.keys(data).forEach((k: any) => {
+    if (!data[k]) delete data[k];
+  });
+
+  await Project.findByIdAndUpdate(projectId, { $inc: { ...data } });
 };
 
 const ProjectService = {

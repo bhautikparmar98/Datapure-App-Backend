@@ -1,5 +1,5 @@
 import mongoose, { Model, Schema, ObjectId } from 'mongoose';
-import { IIAnnotation } from './types';
+import { IAnnotation } from './types';
 
 const ShapeSchema = new Schema({
   x: {
@@ -26,7 +26,7 @@ const ShapeSchema = new Schema({
   },
 });
 
-const AnnotationSchema = new Schema<IIAnnotation>(
+const AnnotationSchema = new Schema<IAnnotation>(
   {
     classId: {
       type: Schema.Types.ObjectId,
@@ -47,7 +47,7 @@ const AnnotationSchema = new Schema<IIAnnotation>(
   }
 );
 
-export const Annotation: Model<IIAnnotation> = mongoose.model(
+export const Annotation: Model<IAnnotation> = mongoose.model(
   'Annotation',
   AnnotationSchema
 );

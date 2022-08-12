@@ -10,7 +10,7 @@ export interface IInstance {
   points?: number[];
 }
 
-export interface IIAnnotation {
+export interface IAnnotation {
   _id: ObjectId;
   classId: ObjectId;
   imageId: ObjectId;
