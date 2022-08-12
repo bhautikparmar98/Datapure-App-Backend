@@ -31,4 +31,10 @@ const AddAnnotationSchema = Joi.object({
     .required(),
 });
 
-export { ImageSignSchema, AddAnnotationSchema };
+const addImageCommentSchema = Joi.object({
+  text: Joi.string().required(),
+  x: Joi.number(),
+  y: Joi.number(),
+});
+
+export { ImageSignSchema, AddAnnotationSchema, addImageCommentSchema };

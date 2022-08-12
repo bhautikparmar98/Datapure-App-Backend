@@ -2,7 +2,11 @@ import { celebrate } from 'celebrate';
 import { Router } from 'express';
 import auth from '../../middlewares/auth';
 import * as controller from './controller';
-import { AddAnnotationSchema, ImageSignSchema } from './validate';
+import {
+  AddAnnotationSchema,
+  ImageSignSchema,
+  addImageCommentSchema,
+} from './validate';
 
 const router = Router();
 
@@ -20,5 +24,13 @@ router.post(
   celebrate({ body: AddAnnotationSchema }),
   controller.addingAnnotation
 );
+
+// comments
+router.post(
+  '/:id/comment',
+  celebrate({ body: addImageCommentSchema }),
+  controller.addComment
+);
+router.get('/:id/comment', controller.getComments);
 
 export default router;

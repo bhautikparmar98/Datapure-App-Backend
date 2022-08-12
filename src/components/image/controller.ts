@@ -1,9 +1,10 @@
 import { RequestHandler } from 'express';
-import { ImageStatus } from '../../constants';
+import { ImageStatus, Roles } from '../../constants';
 import logger from '../../loaders/logger';
 
 import { appResponse } from '../../utils';
 import AnnotationService from '../annotation/service';
+import ImageCommentService from '../comments/service';
 import ProjectService from '../project/service';
 import { Image } from './model';
 import ImageService from './service';
@@ -170,8 +171,6 @@ const addingAnnotation: RequestHandler = async (req, res) => {
     // get the owner of the project
     const ownerId = await ProjectService.getOwnerId(image.projectId.toString());
 
-    console.log('image.annotatorId !== userId', image.annotatorId !== userId);
-
     // make sure that is the user have access to this image
     if (
       image.annotatorId !== userId &&
@@ -202,6 +201,78 @@ const addingAnnotation: RequestHandler = async (req, res) => {
   }
 };
 
+const getComments: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { id: userId, role } = req.user;
+
+    const image = await Image.findById(id);
+
+    if (!image)
+      return res.status(400).send(appResponse('Invalid Image id', false));
+
+    // get the owner of the project
+    const ownerId = await ProjectService.getOwnerId(image.projectId.toString());
+
+    // make sure that is the user have access to this image
+    if (
+      image.annotatorId !== userId &&
+      image.qaId !== userId &&
+      userId !== ownerId &&
+      role !== Roles.ADMIN
+    ) {
+      return res.status(403).send(appResponse('You are not allowed.', false));
+    }
+
+    const comments = await ImageCommentService.getCommentsForImage(id);
+
+    res.status(200).send({ comments });
+  } catch (err) {
+    logger.error(err);
+    const response = appResponse('Error adding comment for image', false);
+    res.status(500).send(response);
+  }
+};
+
+const addComment: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { text, x, y } = req.body;
+
+    const image = await Image.findById(id);
+
+    if (!image)
+      return res.status(400).send(appResponse('Invalid Image id', false));
+
+    // get the owner of the project
+    const ownerId = await ProjectService.getOwnerId(image.projectId.toString());
+
+    // make sure that is the user have access to this image
+    if (
+      image.annotatorId !== userId &&
+      image.qaId !== userId &&
+      userId !== ownerId
+    ) {
+      return res.status(403).send(appResponse('You are not allowed.', false));
+    }
+
+    await ImageCommentService.create({
+      imageId: image._id,
+      userId,
+      text,
+      x,
+      y,
+    });
+
+    res.status(200).send({ success: true });
+  } catch (err) {
+    logger.error(err);
+    const response = appResponse('Error adding comment for image', false);
+    res.status(500).send(response);
+  }
+};
+
 // ---------- PRIVATE --------
 
 export {
@@ -211,4 +282,6 @@ export {
   qaApproveAnnotation,
   clientReviewApprove,
   addingAnnotation,
+  addComment,
+  getComments,
 };
