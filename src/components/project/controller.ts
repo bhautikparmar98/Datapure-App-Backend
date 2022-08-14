@@ -233,7 +233,7 @@ const assignAnnotatorsToProject: RequestHandler = async (req, res) => {
 const getAnnotatorImagesForProject: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const { take } = req.query;
+    const { take, redo } = req.query;
     const userId = req.user.id;
 
     const isAnnotator = UserService.isAnnotator(userId);
@@ -241,11 +241,22 @@ const getAnnotatorImagesForProject: RequestHandler = async (req, res) => {
     if (!isAnnotator)
       return res.status(403).send(appResponse('You are not allowed.', false));
 
-    const images = await ImageService.getProjectImageForAnnotator(
-      id,
-      userId,
-      parseInt(take?.toString() || '100')
-    );
+    let images = [];
+
+    console.log('redo', redo, typeof redo);
+
+    if (redo === 'true')
+      images = await ImageService.getProjectRedoImageForAnnotator(
+        id,
+        userId,
+        parseInt(take?.toString() || '100')
+      );
+    else
+      images = await ImageService.getProjectImageForAnnotator(
+        id,
+        userId,
+        parseInt(take?.toString() || '100')
+      );
 
     const imagesPayload = images.map((img) => ({
       _id: img._id.toString(),
@@ -259,39 +270,6 @@ const getAnnotatorImagesForProject: RequestHandler = async (req, res) => {
   } catch (err) {
     logger.error(err);
     const response = appResponse('Error getting annotator images', false);
-    res.status(500).send(response);
-  }
-};
-
-const getAnnotatorRedoImagesForProject: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { take } = req.query;
-    const userId = req.user.id;
-
-    const isAnnotator = UserService.isAnnotator(userId);
-
-    if (!isAnnotator)
-      return res.status(403).send(appResponse('You are not allowed.', false));
-
-    const images = await ImageService.getProjectRedoImageForAnnotator(
-      id,
-      userId,
-      parseInt(take?.toString() || '100')
-    );
-
-    const imagesPayload = images.map((img) => ({
-      _id: img._id.toString(),
-      fileName: img.fileName,
-      src: img.src,
-      project: img.projectId,
-      annotations: img.annotationIds,
-    }));
-
-    res.status(200).send({ images: imagesPayload });
-  } catch (err) {
-    logger.error(err);
-    const response = appResponse('Error getting annotator redo images', false);
     res.status(500).send(response);
   }
 };
@@ -411,7 +389,6 @@ export {
   assignAnnotatorsToProject,
   getAnnotatorImagesForProject,
   getQAImagesForProject,
-  getAnnotatorRedoImagesForProject,
   downloadOutputFile,
 };
 
