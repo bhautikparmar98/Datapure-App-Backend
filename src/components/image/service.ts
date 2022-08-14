@@ -286,11 +286,12 @@ const getProjectImageForQA = async (
 
 const getProjectImagesWithAnnotations = async (
   projectId: string,
-  status: string
+  statuses: string[]
 ) => {
-  const images = await Image.find({ projectId, status }).populate(
-    'annotationIds'
-  );
+  const images = await Image.find({
+    projectId,
+    status: { $in: statuses },
+  }).populate('annotationIds');
 
   return images;
 };

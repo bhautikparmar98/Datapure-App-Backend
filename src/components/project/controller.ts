@@ -327,12 +327,10 @@ const downloadOutputFile: RequestHandler = async (req, res) => {
     if (user.role === Roles.CLIENT && user.id !== project.userId)
       return res.status(403).send(appResponse('You are not allowed.', false));
 
-    const images = await ImageService.getProjectImagesWithAnnotations(
-      id,
-      ImageStatus.DONE
-    );
-
-    console.log('I came here 2');
+    const images = await ImageService.getProjectImagesWithAnnotations(id, [
+      ImageStatus.DONE,
+      ImageStatus.PENDING_CLIENT_REVIEW,
+    ]);
 
     const classMap: any = {};
     project.classes.forEach((cl) => {
