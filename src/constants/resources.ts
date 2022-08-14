@@ -6,3 +6,4 @@ export const ADMIN = 'admin';
 export const QA = 'qa';
 export const ANNOTATOR = 'annotator';
 export const ANNOTATION = 'ANNOTATION';
+export const OUTPUT_FILE = 'OUTPUT_FILE';

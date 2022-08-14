@@ -5,6 +5,7 @@ export interface IImage {
   src: string;
   status: string;
   fileName: string;
+  dateAnnotated?: Date;
   projectId: ObjectId;
   createdAt: Date;
   updatedAt: Date;

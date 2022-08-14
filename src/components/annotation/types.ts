@@ -7,6 +7,7 @@ export interface IInstance {
   x?: number;
   y?: number;
   width?: number;
+  height?: number;
   points?: number[];
 }
 

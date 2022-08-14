@@ -1,4 +1,4 @@
-import mongoose, { Model, Schema, ObjectId } from 'mongoose';
+import mongoose, { Model, Schema } from 'mongoose';
 import { IProject } from './types';
 
 const ProjectClassSchema = new Schema({
@@ -18,6 +18,7 @@ const ProjectSchema = new Schema<IProject>(
       type: Date,
       required: true,
     },
+
     type: {
       type: String,
       required: true,

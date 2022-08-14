@@ -48,6 +48,7 @@ const finishAnnotation: RequestHandler = async (req, res) => {
     });
 
     image.status = ImageStatus.PENDING_QA;
+    image.dateAnnotated = new Date();
 
     const qaIds = await ProjectService.getQAsIds(image.projectId.toString());
     if (qaIds) ImageService.assignQA(qaIds, image.projectId.toString(), id);

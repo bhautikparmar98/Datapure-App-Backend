@@ -44,5 +44,13 @@ router.put(
 router.put('/:id/assign/qa', controller.assignQAsToProject);
 
 router.put('/:id/assign/annotator', controller.assignAnnotatorsToProject);
+router.get(
+  '/:id/download',
+  accessControlMiddleware.check({
+    resource: Resources.OUTPUT_FILE,
+    action: Actions.READ,
+  }),
+  controller.downloadOutputFile
+);
 
 export default router;

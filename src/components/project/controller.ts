@@ -1,13 +1,14 @@
 import { RequestHandler } from 'express';
 import logger from '../../loaders/logger';
 
+import { ImageStatus, Resources, Roles } from '../../constants';
 import { appResponse } from '../../utils';
-import { Project } from './model';
-import ImageService from '../image/service';
 import ac from '../../utils/accesscontrol';
+import { IAnnotation } from '../annotation/types';
+import ImageService from '../image/service';
 import UserService from '../user/service';
+import { Project } from './model';
 import ProjectService from './service';
-import { Resources } from '../../constants';
 
 // only client will use this method to create a new register
 const createProject: RequestHandler = async (req, res) => {
@@ -284,12 +285,13 @@ const getAnnotatorRedoImagesForProject: RequestHandler = async (req, res) => {
       fileName: img.fileName,
       src: img.src,
       project: img.projectId,
+      annotations: img.annotationIds,
     }));
 
     res.status(200).send({ images: imagesPayload });
   } catch (err) {
     logger.error(err);
-    const response = appResponse('Error getting annotator images', false);
+    const response = appResponse('Error getting annotator redo images', false);
     res.status(500).send(response);
   }
 };
@@ -316,12 +318,86 @@ const getQAImagesForProject: RequestHandler = async (req, res) => {
       fileName: img.fileName,
       src: img.src,
       project: img.projectId,
+      annotations: img.annotationIds,
     }));
 
     res.status(200).send({ images: imagesPayload });
   } catch (err) {
     logger.error(err);
     const response = appResponse('Error getting qa images', false);
+    res.status(500).send(response);
+  }
+};
+
+const downloadOutputFile: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = req.user;
+
+    const project = await Project.findById(id as string);
+
+    console.log('I came here1 ');
+
+    if (!project)
+      return res.status(400).send(appResponse('Invalid project id', false));
+
+    // if he is an admin then he should assigned to this project
+    if (user.role === Roles.ADMIN && user.id !== project.adminId)
+      return res.status(403).send(appResponse('You are not allowed.', false));
+
+    // if the role is client then he should own the project
+    if (user.role === Roles.CLIENT && user.id !== project.userId)
+      return res.status(403).send(appResponse('You are not allowed.', false));
+
+    const images = await ImageService.getProjectImagesWithAnnotations(
+      id,
+      ImageStatus.DONE
+    );
+
+    console.log('I came here 2');
+
+    const classMap: any = {};
+    project.classes.forEach((cl) => {
+      classMap[cl._id.toString()] = cl;
+    });
+
+    const imagesPayload = images.map((img) => {
+      return {
+        url: img.src,
+        fileName: img.fileName,
+        annotations: (img.annotationIds as any).map((anno: IAnnotation) => {
+          const cl = classMap[anno.classId.toString()];
+          return {
+            className: cl.name,
+            classColor: cl.color,
+            shapes: anno.shapes.map((s) => ({
+              x: s.x,
+              t: s.y,
+              width: s.width,
+              height: s.height,
+              points: s.points,
+              type: s.type,
+              id: s._id?.toString(),
+            })),
+          };
+        }),
+      };
+    });
+
+    const json = JSON.stringify(imagesPayload, undefined, 2);
+
+    const path = await ProjectService.createOutputFile(project.name, json);
+
+    res.status(200).download(path, (error) => {
+      if (error) {
+        logger.error(error);
+        throw new Error('can not send the file');
+      }
+      ProjectService.deleteOutputFile(path);
+    });
+  } catch (error) {
+    logger.error(error);
+    const response = appResponse('Error download output file', false);
     res.status(500).send(response);
   }
 };
@@ -336,6 +412,7 @@ export {
   getAnnotatorImagesForProject,
   getQAImagesForProject,
   getAnnotatorRedoImagesForProject,
+  downloadOutputFile,
 };
 
 // --*-------------- PRIVATE

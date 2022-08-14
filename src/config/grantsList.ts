@@ -190,4 +190,24 @@ export const grantList = [
     action: Actions.CREATE_OWN,
     attributes: '*',
   },
+
+  // DOWNLOAD OUTPUT FILE
+  {
+    role: roles.CLIENT,
+    resource: Resources.OUTPUT_FILE,
+    action: Actions.READ_ANY,
+    attributes: '*',
+  },
+  {
+    role: roles.SUPER_ADMIN,
+    resource: Resources.OUTPUT_FILE,
+    action: Actions.READ_ANY,
+    attributes: '*',
+  },
+  {
+    role: roles.ADMIN,
+    resource: Resources.OUTPUT_FILE,
+    action: Actions.READ_ANY,
+    attributes: '*',
+  },
 ];

@@ -5,6 +5,7 @@ export interface IProject {
   _id: ObjectId;
   name: string;
   dueAt: Date;
+
   type: string;
   classes: ProjectClass[];
   imagesIds: ObjectId[];

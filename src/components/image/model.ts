@@ -9,6 +9,9 @@ const ImageSchema = new Schema<IImage>(
       trim: true,
       min: 5,
     },
+    dateAnnotated: {
+      type: Date,
+    },
 
     status: {
       type: String,

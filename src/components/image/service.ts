@@ -261,7 +261,8 @@ const getProjectRedoImageForAnnotator = async (
     status: ImageStatus.PENDING_REDO,
   })
     .limit(take)
-    .populate('projectId', 'classes');
+    .populate('projectId', 'classes')
+    .populate('annotationIds');
 
   return images;
 };
@@ -277,7 +278,19 @@ const getProjectImageForQA = async (
     status: ImageStatus.PENDING_QA,
   })
     .limit(take)
-    .populate('projectId', 'classes');
+    .populate('projectId', 'classes')
+    .populate('annotationIds');
+
+  return images;
+};
+
+const getProjectImagesWithAnnotations = async (
+  projectId: string,
+  status: string
+) => {
+  const images = await Image.find({ projectId, status }).populate(
+    'annotationIds'
+  );
 
   return images;
 };
@@ -293,5 +306,6 @@ const ImageService = {
   getProjectImageForAnnotator,
   getProjectImageForQA,
   getProjectRedoImageForAnnotator,
+  getProjectImagesWithAnnotations,
 };
 export default ImageService;
