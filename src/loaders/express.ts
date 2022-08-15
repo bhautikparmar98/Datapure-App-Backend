@@ -20,6 +20,10 @@ export default ({ app }: { app: express.Application }): void => {
   // Load API routes
   app.use(config.api.prefix, ApiRoutes());
 
+  app.use('/', (req, res) => {
+    res.status(200).json({ live: true });
+  });
+
   // handle errors from 'celebrate'
   app.use(errors());
 

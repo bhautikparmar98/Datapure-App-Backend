@@ -15,5 +15,8 @@ exports.default = ({ app }) => {
     }));
     app.use((0, body_parser_1.json)());
     app.use(config_1.default.api.prefix, (0, api_1.ApiRoutes)());
+    app.use('/', (req, res) => {
+        res.status(200).json({ live: true });
+    });
     app.use((0, celebrate_1.errors)());
 };
