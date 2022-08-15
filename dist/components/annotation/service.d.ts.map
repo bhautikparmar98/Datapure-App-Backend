@@ -1,0 +1,1 @@
+{"version":3,"file":"service.d.ts","sourceRoot":"","sources":["../../../src/components/annotation/service.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,WAAW,EAAE,MAAM,SAAS,CAAC;AAatC,QAAA,MAAM,iBAAiB;qCAVR,WAAW,EAAE,KACzB,QAAQ,GAAG,EAAE,CAAC;iCAKyB,MAAM,KAAG,QAAQ,IAAI,CAAC;CAO/D,CAAC;AACF,eAAe,iBAAiB,CAAC"}
