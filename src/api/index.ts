@@ -19,5 +19,7 @@ export const ApiRoutes = (): Router => {
   app.use('/project', ProjectRouter);
   app.use('/imageComment', ImageCommentRouter);
 
+  app.use('/', (req, res) => res.status(200).json({ live: true }));
+
   return app;
 };
