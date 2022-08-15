@@ -6,5 +6,6 @@ RUN npm install
 
 COPY . .
 
+RUN npm tun db:migrate
 RUN npm run db:generate
 CMD npm run dev
