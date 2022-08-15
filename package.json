@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "prestart": "npm run build && npm run db:migrate && npm run db:generate",
+    "build": "npx tsc",
+    "prestart": "npm i && npm run build && npm run db:migrate && npm run db:generate",
     "start": "node dist/index.js",
     "dev": "npx nodemon -L --watch src -e ts --exec ts-node src/index.ts",
     "db:generate": "prisma generate",
