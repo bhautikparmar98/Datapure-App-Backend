@@ -1,185 +1,411 @@
 import { RequestHandler } from 'express';
-import bcrypt from 'bcryptjs';
-import { User } from './model';
-import { logger } from '../../utils/logger';
+import db from '../../dbClient';
+import logger from '../../loaders/logger';
 
+import { Resources, Roles } from '../../constants';
 import { appResponse } from '../../utils';
+import UserService from './service';
+import ac from '../../utils/accesscontrol';
+import { ClientInfo, User } from '@prisma/client';
+import { Project } from '../project/model';
+import ImageService from '../image/service';
 
-//!TODO: Add validation to the email
-
-const createUser: RequestHandler = async (req, res) => {
+// only client will use this method to create a new register
+const registerClient: RequestHandler = async (req, res) => {
   try {
-    const { username, password, email, name } = req.body;
+    const { password, email, firstName, lastName, company } = req.body;
 
-    if (!username)
-      return res.status(400).send(appResponse('Username is required', false));
-    if (!password)
-      return res.status(400).send(appResponse('Password is required', false));
-    if (!email)
-      return res.status(400).send(appResponse('Email is required', false));
-    if (!name)
-      return res.status(400).send(appResponse('Name is required', false));
-    const existingUser = await User.findOne({
-      $or: [{ username }, { email }],
+    // get user with email
+    const userExist = await db.user.findFirst({
+      where: { email: { equals: email } },
     });
 
-    if (existingUser)
-      return res
-        .status(400)
-        .send(appResponse('Username or email already exists', false));
+    // check if there is a user with the same email
+    if (userExist)
+      return res.status(400).send(appResponse('Email exist before.', false));
 
-    const hash = await bcrypt.hash(password, 10);
+    // creating a clientInfo object
+    const createdClientInfo = await db.clientInfo.create({
+      data: { company },
+    });
 
-    const user = new User({ username, password: hash, email, name });
-    req.session.user = { email, userID: user.id };
+    const { content, iv } = await UserService.encrypt(password);
 
-    await user.save();
+    await db.user.create({
+      data: {
+        email,
+        hashedPassword: content,
+        iv,
+        firstName,
+        lastName,
+        role: Roles.CLIENT,
+        active: true,
+        clientInfoId: createdClientInfo.id,
+      },
+    });
 
-    const response = appResponse('User created successfully', true, user);
-
-    res.status(201).send(response);
+    res.status(201).send({ success: true });
   } catch (err) {
-    const response = appResponse('Error creating user.', false);
+    logger.error(err);
+
+    const response = appResponse('Error registering user.', false);
     res.status(500).send(response);
   }
 };
 
-const loginUser: RequestHandler = async (req, res) => {
+const login: RequestHandler = async (req, res) => {
   try {
     const { password, email } = req.body;
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      const response = appResponse('Email or password is wrong.', false);
-      return res.status(401).send(response);
-    }
+    // get user with email
+    const user = await db.user.findFirst({
+      where: { email: { equals: email } },
+    });
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      const response = appResponse('Email or password is wrong.', false);
-      return res.status(401).send(response);
-    }
+    // check if there is a user with the same email
+    if (!user)
+      return res.status(401).send(appResponse('Invalid Credentials.', false));
 
-    req.session.user = { email, userID: user.id };
-    const response = appResponse('User logged in successfully', true, user);
-    res.status(200).send(response);
-  } catch (err) {
-    const response = appResponse(
-      'Something went wrong. Try again later.',
-      false
+    // verify the password
+    const isValidCred = await UserService.verifyPassword(
+      {
+        content: user.hashedPassword,
+        iv: user.iv,
+      },
+      password
     );
-    res.status(401).send(response);
+
+    if (!isValidCred)
+      return res.status(401).send(appResponse('Invalid Credentials.', false));
+
+    const token = UserService.generateAuthToken({
+      email: user.email,
+      fullName: `${user.firstName} ${user.lastName}`,
+      id: user.id,
+      role: user.role,
+    });
+
+    res.status(201).send({ token });
+  } catch (err) {
+    logger.error(err);
+
+    const response = appResponse('Error logging user.', false);
+    res.status(500).send(response);
   }
 };
 
-const logoutUser: RequestHandler = async (req, res) => {
+const getAllUsers: RequestHandler = async (req, res) => {
   try {
-    req.session.destroy((err) => {
-      if (err) {
-        const response = appResponse(
-          'Something went wrong. Try again later.',
-          false
-        );
-        return res.status(400).send(response);
-      }
-      return res.status(200).send(appResponse('Signed out successfully', true));
+    let { skip = 0, take = 5 } = req.query;
+
+    const updatedSkip = parseInt(skip.toString());
+    const updatedTake = parseInt(take.toString());
+
+    // check the data
+    const permission = ac.can(req.user.role).readAny('user');
+    if (!permission.granted)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    // queries
+    const usersCount = await db.user.count({
+      where: {
+        role: { not: Roles.SUPER_ADMIN },
+      },
+    });
+    const users = await db.user.findMany({
+      skip: updatedSkip,
+      take: updatedTake,
+      include: {
+        clientInfo: true,
+      },
+      where: {
+        role: { not: Roles.SUPER_ADMIN },
+      },
+    });
+
+    const updatedUsers = users.map((u) => mapUserToDTO(u));
+
+    res.send({ users: updatedUsers, totalCount: usersCount });
+  } catch (error) {
+    console.log('error');
+    const response = appResponse('Error get all users', false);
+    res.status(500).send(response);
+  }
+};
+
+const inviteUser: RequestHandler = async (req, res) => {
+  try {
+    const { email, firstName, lastName, company, role } = req.body;
+
+    // check the data
+    const permission = ac.can(req.user.role).createAny('user');
+    if (!permission.granted || role === Roles.SUPER_ADMIN)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    // get user with email
+    const userExist = await db.user.findFirst({
+      where: { email: { equals: email } },
+    });
+
+    // check if there is a user with the same email
+    if (userExist)
+      return res.status(400).send(appResponse('Email exist before.', false));
+
+    // created random password
+    const password = UserService.generateRandomPassword();
+
+    // creating a clientInfo object
+    const createdClientInfo = await db.clientInfo.create({
+      data: { company },
+    });
+
+    const { content, iv } = await UserService.encrypt(password);
+
+    const createdUser = await db.user.create({
+      data: {
+        email,
+        hashedPassword: content,
+        iv,
+        firstName,
+        lastName,
+        role,
+        active: true,
+        clientInfoId: createdClientInfo.id,
+      },
+    });
+
+    // send email
+    await UserService.sendInvitationMail(createdUser, password);
+
+    res.status(201).send({
+      user: mapUserToDTO({ ...createdUser, clientInfo: createdClientInfo }),
     });
   } catch (err) {
     logger.error(err);
 
-    const response = appResponse(
-      'Something went wrong. Try again later.',
-      false
-    );
+    const response = appResponse('Error inviting user.', false);
     res.status(500).send(response);
   }
 };
 
-const getProfile: RequestHandler = async (req, res) => {
+const getPassword: RequestHandler = async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.session.user?.email });
+    const { id } = req.params;
 
-    if (!user) {
-      const response = appResponse('User not found', false);
-      return res.status(404).send(response);
-    }
-    const response = appResponse('User found', true, user);
-    res.status(200).send(response);
-  } catch (err) {
-    const response = appResponse('Error getting user profile', false);
-    res.status(500).send(response);
-  }
-};
+    // check the data
+    const permission = ac.can(req.user.role).readAny('user');
+    if (!permission.granted)
+      return res.status(403).send(appResponse('You are not allowed', false));
 
-const updateUser: RequestHandler = async (req, res) => {
-  try {
-    const { update } = req.body;
-    const userID = req.session.user?.userID;
-
-    if (update.password) {
-      update.password = await bcrypt.hash(update.password, 10);
-    }
-
-    let response = appResponse('User not found', false);
-
-    if (!update) {
-      response = appResponse('Update is required', false);
-      return res.status(400).send(response);
-    }
-
-    if (!userID) {
-      return res.status(404).send(response);
-    }
-
-    const user = await User.findByIdAndUpdate(userID, update, { new: true });
-    if (!user) {
-      return res.status(404).send(response);
-    }
-
-    response = appResponse('User updated successfully', true, user);
-    res.status(200).send(response);
-  } catch (err) {
-    logger.error(err);
-
-    const response = appResponse('Error updating user', false);
-    res.status(500).send(response);
-  }
-};
-
-const deleteUser: RequestHandler = async (req, res) => {
-  try {
-    const userID = req.session.user?.userID;
-
-    let response = appResponse('User not found', false);
-
-    if (!userID) {
-      return res.status(404).send(response);
-    }
-
-    const user = await User.findByIdAndDelete(userID);
-    if (!user) {
-      return res.status(404).send(response);
-    }
-
-    req.session.destroy((err) => {
-      if (err) {
-        logger.error('User deleted successfully but session not destroyed');
-      }
+    // get user with email
+    const user = await db.user.findFirst({
+      where: { id: { equals: +id } },
     });
 
-    response = appResponse('User deleted successfully', true, user);
-    return res.status(200).send(response);
-  } catch (err) {
-    const response = appResponse('Error deleting user', false);
+    // check if there is a user with the same email
+    if (!user) return res.status(400).send(appResponse('Invalid User.', false));
+
+    if (user.role === Roles.SUPER_ADMIN)
+      return res.status(403).send(appResponse('Not allowed.', false));
+    // queries
+
+    const password = UserService.decrypt({
+      iv: user.iv,
+      content: user.hashedPassword,
+    });
+
+    res.send({ password });
+  } catch (error) {
+    console.log('error');
+    const response = appResponse('Error getting password', false);
     res.status(500).send(response);
   }
 };
+
+const getClientsProjects: RequestHandler = async (req, res) => {
+  try {
+    const permission = ac.can(req.user.role).readOwn(Resources.PROJECT);
+    if (!permission.granted)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    const { id } = req.params;
+
+    const projects = await Project.find({ userId: id });
+    const payloadProjects = projects.map((p) => p.toJSON());
+
+    res.status(200).send({ projects: payloadProjects });
+  } catch (err) {
+    logger.error(err);
+    const response = appResponse('Error getting client projects', false);
+    res.status(500).send(response);
+  }
+};
+
+const getAdminProjects: RequestHandler = async (req, res) => {
+  try {
+    const permission = ac.can(req.user.role).readOwn(Resources.PROJECT);
+    if (!permission.granted)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    const { id } = req.user;
+
+    const projects = await Project.find({ adminId: id, finished: false });
+    const payloadProjects = projects.map((p) => p.toJSON());
+
+    res.status(200).send({ projects: payloadProjects });
+  } catch (err) {
+    logger.error(err);
+    const response = appResponse('Error getting admin projects', false);
+    res.status(500).send(response);
+  }
+};
+
+const getQAProjects: RequestHandler = async (req, res) => {
+  try {
+    const permission = ac.can(req.user.role).readOwn(Resources.PROJECT);
+    if (!permission.granted)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    const { id } = req.user;
+    const countsArr = [];
+
+    const projects = await Project.find({ assignedQAs: id, finished: false });
+    const payloadProjects = projects.map((p) => p.toJSON());
+
+    for (let i = 0; i < payloadProjects.length; i++) {
+      const p = payloadProjects[i];
+      const counts = await ImageService.getQAStatics(p._id as any, id);
+      countsArr.push({ ...counts, projectId: p._id });
+    }
+
+    res.status(200).send({ projects: payloadProjects, QACounts: countsArr });
+  } catch (err) {
+    logger.error(err);
+    const response = appResponse('Error getting admin projects', false);
+    res.status(500).send(response);
+  }
+};
+
+const getAnnotatorProjects: RequestHandler = async (req, res) => {
+  try {
+    const permission = ac.can(req.user.role).readOwn(Resources.PROJECT);
+    if (!permission.granted)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    const { id } = req.user;
+    const countsArr = [];
+
+    const projects = await Project.find({
+      assignedAnnotators: id,
+      finished: false,
+    });
+    const payloadProjects = projects.map((p) => p.toJSON());
+
+    for (let i = 0; i < payloadProjects.length; i++) {
+      const p = payloadProjects[i];
+      const counts = await ImageService.getAnnotatorStatics(p._id as any, id);
+      countsArr.push({ ...counts, projectId: p._id });
+    }
+
+    res
+      .status(200)
+      .send({ projects: payloadProjects, annotatorCounts: countsArr });
+  } catch (err) {
+    logger.error(err);
+    const response = appResponse('Error getting admin projects', false);
+    res.status(500).send(response);
+  }
+};
+
+const getClients: RequestHandler = async (req, res) => {
+  try {
+    const users = await getUsersByRole(Roles.CLIENT);
+    const updatedUsers = users.map((u) => mapUserToDTO(u));
+    res.send({ clients: updatedUsers });
+  } catch (error) {
+    console.log('error');
+    const response = appResponse('Error get all clients', false);
+    res.status(500).send(response);
+  }
+};
+
+const getAdmins: RequestHandler = async (req, res) => {
+  try {
+    const admins = await getUsersByRole(Roles.ADMIN);
+    const updatedUsers = admins.map((u) => mapUserToDTO(u));
+    res.send({ admins: updatedUsers });
+  } catch (error) {
+    console.log('error');
+    const response = appResponse('Error get all Admins', false);
+    res.status(500).send(response);
+  }
+};
+
+const getQAs: RequestHandler = async (req, res) => {
+  try {
+    const qas = await getUsersByRole(Roles.QA);
+    const updatedUsers = qas.map((u) => mapUserToDTO(u));
+    res.send({ qas: updatedUsers });
+  } catch (error) {
+    console.log('error');
+    const response = appResponse('Error get all Admins', false);
+    res.status(500).send(response);
+  }
+};
+
+const getAnnotators: RequestHandler = async (req, res) => {
+  try {
+    const annotators = await getUsersByRole(Roles.ANNOTATOR);
+    const updatedUsers = annotators.map((u) => mapUserToDTO(u));
+    res.send({ annotators: updatedUsers });
+  } catch (error) {
+    console.log('error');
+    const response = appResponse('Error get all Admins', false);
+    res.status(500).send(response);
+  }
+};
+
+// ------------------ PRIVATE METHODS ---------------
+
+const getUsersByRole = async (role: keyof typeof Roles) => {
+  return await db.user.findMany({
+    include: {
+      clientInfo: true,
+    },
+    where: {
+      role,
+      active: true,
+    },
+  });
+};
+
+const mapUserToDTO = (
+  user: User & {
+    clientInfo?: ClientInfo | null;
+  }
+) => ({
+  id: user.id,
+  firstName: user.firstName,
+  lastName: user.lastName,
+  fullName: `${user.firstName} ${user.lastName}`,
+  role: user.role,
+  email: user.email,
+  numberOfActiveProjects: user.numberOfActiveProjects,
+  clientInfo: user.clientInfo,
+});
 
 export {
-  createUser,
-  loginUser,
-  logoutUser,
-  getProfile,
-  updateUser,
-  deleteUser,
+  registerClient,
+  login,
+  getAllUsers,
+  inviteUser,
+  getPassword,
+  getClientsProjects,
+  getClients,
+  getAdmins,
+  getAdminProjects,
+  getQAs,
+  getAnnotators,
+  getQAProjects,
+  getAnnotatorProjects,
 };

@@ -1,0 +1,65 @@
+datasource db {
+  provider          = "mysql"
+  url               = env("SQL_DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl"]
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt()
+
+  email                  String  @unique
+  firstName              String
+  lastName               String
+  hashedPassword         String
+  iv                     String
+  active                 Boolean @default(false)
+  numberOfActiveProjects Int     @default(0)
+
+  role  String
+  phone String?
+
+  clientInfoId Int?
+  clientInfo   ClientInfo? @relation(fields: [clientInfoId], references: [id])
+}
+
+model ClientInfo {
+  id      Int    @id @default(autoincrement())
+  company String
+  User    User[]
+}
+
+// model Role {
+//   id        Int      @id @default(autoincrement())
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @default(now()) @updatedAt()
+
+//   name           String           @unique
+//   description    String?
+//   User           User[]
+//   RolePermission RolePermission[]
+// }
+
+// model Permission {
+//   id             Int              @id @default(autoincrement())
+//   createdAt      DateTime         @default(now())
+//   updatedAt      DateTime         @default(now()) @updatedAt()
+//   name           String           @unique
+//   RolePermission RolePermission[]
+// }
+
+// model RolePermission {
+//   id Int @id @default(autoincrement())
+
+//   roleId Int
+//   role   Role @relation(fields: [roleId], references: [id])
+
+//   permissionId Int
+//   permission   Permission @relation(fields: [permissionId], references: [id])
+// }

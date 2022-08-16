@@ -2,9 +2,9 @@ import path from 'path';
 import { RequestHandler } from 'express';
 import vision from '@google-cloud/vision';
 import { appResponse } from '../../utils';
-import { logger } from '../../utils/logger';
+import logger from '../../loaders/logger';
 
-const getOCR: RequestHandler = async (req, res) => {
+const getOCR: RequestHandler = async (req: any, res: any) => {
   try {
     if (!req.file?.buffer) {
       const response = appResponse(
@@ -19,8 +19,8 @@ const getOCR: RequestHandler = async (req, res) => {
     const response = appResponse('Fetched OCR for image', true, result);
     return res.send(response);
   } catch (err) {
-    logger.error(err);
     const response = appResponse(`Couldn't detect OCR with Google`, false);
+    logger.error(err);
     return res.status(500).send(response);
   }
 };

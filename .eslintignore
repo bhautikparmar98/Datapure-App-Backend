@@ -1,0 +1,16 @@
+# don't ever lint node_modules
+node_modules
+# don't lint build output (make sure it's set to your correct build folder name)
+dist
+# don't lint nyc coverage output
+coverage
+# don't lint the docs
+docs
+# don't lint config files
+jest.config.js
+# don't lint the tests
+*.test.ts
+# don't lint helper node scripts
+scripts
+#prisma seeding
+prisma

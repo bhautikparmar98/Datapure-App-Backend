@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DELETE = exports.DELETE_OWN = exports.DELETE_ANY = exports.UPDATE = exports.UPDATE_OWN = exports.UPDATE_ANY = exports.READ = exports.READ_OWN = exports.READ_ANY = exports.CREATE = exports.CREATE_OWN = exports.CREATE_ANY = void 0;
+exports.CREATE_ANY = 'create:any';
+exports.CREATE_OWN = 'create:own';
+exports.CREATE = 'create';
+exports.READ_ANY = 'read:any';
+exports.READ_OWN = 'read:own';
+exports.READ = 'read';
+exports.UPDATE_ANY = 'update:any';
+exports.UPDATE_OWN = 'update:own';
+exports.UPDATE = 'update';
+exports.DELETE_ANY = 'delete:any';
+exports.DELETE_OWN = 'delete:own';
+exports.DELETE = 'delete';
