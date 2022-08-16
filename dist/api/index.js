@@ -20,9 +20,6 @@ const ApiRoutes = () => {
     app.use('/image', router_3.default);
     app.use('/project', router_4.default);
     app.use('/imageComment', router_5.default);
-    app.use('/', (req, res) => {
-        res.status(200).json({ live: true });
-    });
     return app;
 };
 exports.ApiRoutes = ApiRoutes;
