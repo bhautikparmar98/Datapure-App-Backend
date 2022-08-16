@@ -7,7 +7,11 @@ import config from '../config';
 
 export default ({ app }: { app: express.Application }): void => {
   //load cors
-  app.use(cors());
+  app.use(
+    cors({
+      origin: '*',
+    })
+  );
 
   // Middleware that transforms the raw string of req.body into json
   app.use(json());
