@@ -28,7 +28,7 @@ services:
         target: dev
       container_name: datapure_dev
       volumes:
-        - ./:/usr/src/app
+        - ./:/app
       ports:
         - "4000:80"
       environment:

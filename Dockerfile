@@ -3,7 +3,7 @@ ENV NODE_ENV=production
 
 EXPOSE 80
 
-WORKDIR /usr/src/app
+WORKDIR /app
 COPY package*.json ./
 
 RUN npm install --only=production \
