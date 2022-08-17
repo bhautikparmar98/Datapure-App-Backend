@@ -20,4 +20,5 @@ artifacts:
         - tsconfig.json
         - Dockerrun.aws.json
         - 'dist/**/*'
+        - 'prisma/**/*'
         - Dockerfile
