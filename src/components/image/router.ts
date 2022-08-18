@@ -17,6 +17,8 @@ router.post('/sign', celebrate({ body: ImageSignSchema }), controller.signUrl);
 router.put('/:id/annotation/finish', controller.finishAnnotation);
 router.put('/:id/annotation/redo', controller.redoHandler);
 router.put('/:id/annotation/approve', controller.qaApproveAnnotation);
+router.put('/:id/client/approve', controller.clientReviewApprove);
+router.put('/:id/client/disapprove', controller.clientReviewDisApprove);
 router.put('/:id/approve', controller.qaApproveAnnotation);
 
 router.post(

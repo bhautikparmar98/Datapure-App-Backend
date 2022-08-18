@@ -274,6 +274,43 @@ const getAnnotatorImagesForProject: RequestHandler = async (req, res) => {
   }
 };
 
+const getClientImagesForProject: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { take } = req.query;
+    const userId = req.user.id;
+
+    const project = await Project.findById(id as string);
+
+    if (!project)
+      return res.status(400).send(appResponse('Invalid project id', false));
+
+    if (project.userId !== userId)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    const images = await ImageService.getProjectPendingReviewImageForClient(
+      id,
+      parseInt(take?.toString() || '100')
+    );
+
+    const imagesPayload = images.map((img) => ({
+      _id: img._id.toString(),
+      fileName: img.fileName,
+      src: img.src,
+      project: img.projectId,
+      annotations: img.annotationIds,
+    }));
+
+    res.status(200).send({ images: imagesPayload });
+  } catch (err) {
+    logger.error(err);
+    const response = appResponse(
+      'Error getting pending review client images',
+      false
+    );
+    res.status(500).send(response);
+  }
+};
 const getQAImagesForProject: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
@@ -388,6 +425,7 @@ export {
   getAnnotatorImagesForProject,
   getQAImagesForProject,
   downloadOutputFile,
+  getClientImagesForProject,
 };
 
 // --*-------------- PRIVATE
