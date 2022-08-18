@@ -158,6 +158,41 @@ const clientReviewApprove: RequestHandler = async (req, res) => {
   }
 };
 
+const clientReviewDisApprove: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const image = await Image.findById(id);
+
+    if (!image)
+      return res.status(400).send(appResponse('Invalid Image id', false));
+
+    // get the owner of the project
+    const ownerId = await ProjectService.getOwnerId(image.projectId.toString());
+
+    // make sure that is the owner who is the one to confirming
+    if (ownerId !== userId) {
+      return res.status(403).send(appResponse('You are not allowed.', false));
+    }
+
+    image.status = ImageStatus.PENDING_REDO;
+
+    ProjectService.updateCount(image.projectId.toString(), {
+      clientReviewCount: -1,
+      redoCount: 1,
+    });
+
+    await image.save();
+
+    res.status(200).send({ success: true });
+  } catch (err) {
+    logger.error(err);
+    const response = appResponse('Error sign images.', false);
+    res.status(500).send(response);
+  }
+};
+
 const addingAnnotation: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
@@ -285,4 +320,5 @@ export {
   addingAnnotation,
   addComment,
   getComments,
+  clientReviewDisApprove,
 };

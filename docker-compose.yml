@@ -23,10 +23,12 @@ services:
         - '27018:27017'
 
     datapure_dev:
-      build: .
+      build: 
+        context: .
+        target: dev
       container_name: datapure_dev
       volumes:
-        - ./:/usr/src/app
+        - ./:/app
       ports:
         - "4000:80"
       environment:

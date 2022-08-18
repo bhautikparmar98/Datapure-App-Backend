@@ -284,6 +284,21 @@ const getProjectImageForQA = async (
   return images;
 };
 
+const getProjectPendingReviewImageForClient = async (
+  projectId: string,
+  take = 10
+) => {
+  const images = await Image.find({
+    projectId,
+    status: ImageStatus.PENDING_CLIENT_REVIEW,
+  })
+    .limit(take)
+    .populate('projectId', 'classes')
+    .populate('annotationIds');
+
+  return images;
+};
+
 const getProjectImagesWithAnnotations = async (
   projectId: string,
   statuses: string[]
@@ -308,5 +323,6 @@ const ImageService = {
   getProjectImageForQA,
   getProjectRedoImageForAnnotator,
   getProjectImagesWithAnnotations,
+  getProjectPendingReviewImageForClient,
 };
 export default ImageService;
