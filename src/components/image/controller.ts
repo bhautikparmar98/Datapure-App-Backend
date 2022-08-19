@@ -37,6 +37,14 @@ const finishAnnotation: RequestHandler = async (req, res) => {
     if (image.annotatorId !== userId)
       return res.status(403).send(appResponse('You are not allowed.', false));
 
+    if (
+      image.status !== ImageStatus.ANNOTATION_INPROGRESS &&
+      image.status !== ImageStatus.PENDING_ANNOTATION
+    )
+      return res
+        .status(400)
+        .send(appResponse('This Image is invalid state', false));
+
     const key =
       image.status === ImageStatus.ANNOTATION_INPROGRESS
         ? 'annotationInProgressCount'
@@ -76,6 +84,11 @@ const redoHandler: RequestHandler = async (req, res) => {
     if (image.qaId !== userId)
       return res.status(403).send(appResponse('You are not allowed.', false));
 
+    if (image.status !== ImageStatus.PENDING_QA)
+      return res
+        .status(400)
+        .send(appResponse('This Image is invalid state', false));
+
     image.status = ImageStatus.PENDING_REDO;
 
     ProjectService.updateCount(image.projectId.toString(), {
@@ -105,6 +118,11 @@ const qaApproveAnnotation: RequestHandler = async (req, res) => {
 
     if (image.qaId !== userId)
       return res.status(403).send(appResponse('You are not allowed.', false));
+
+    if (image.status !== ImageStatus.PENDING_QA)
+      return res
+        .status(400)
+        .send(appResponse('This Image is invalid state', false));
 
     image.status = ImageStatus.PENDING_CLIENT_REVIEW;
 
@@ -141,6 +159,11 @@ const clientReviewApprove: RequestHandler = async (req, res) => {
       return res.status(403).send(appResponse('You are not allowed.', false));
     }
 
+    if (image.status !== ImageStatus.PENDING_CLIENT_REVIEW)
+      return res
+        .status(400)
+        .send(appResponse('This Image is invalid state', false));
+
     image.status = ImageStatus.DONE;
 
     ProjectService.updateCount(image.projectId.toString(), {
@@ -175,6 +198,11 @@ const clientReviewDisApprove: RequestHandler = async (req, res) => {
     if (ownerId !== userId) {
       return res.status(403).send(appResponse('You are not allowed.', false));
     }
+
+    if (image.status !== ImageStatus.PENDING_CLIENT_REVIEW)
+      return res
+        .status(400)
+        .send(appResponse('This Image is invalid state', false));
 
     image.status = ImageStatus.PENDING_REDO;
 

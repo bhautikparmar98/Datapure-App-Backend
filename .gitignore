@@ -3,6 +3,8 @@
 # Logs
 logs/
 *.log
+*.zip
+**/dist/*
 
 
 # API keys and secrets

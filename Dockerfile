@@ -14,9 +14,9 @@ ENV PATH /app/node_modules/.bin:$PATH
 FROM base as dev
 ENV NODE_ENV=development
 COPY . .
-RUN npm install --only=development
-RUN npm run db:migrate
-RUN npm run db:generate
+RUN npm install 
+# RUN npm run db:migrate
+# RUN npm run db:generate
 CMD npm run dev
 
 

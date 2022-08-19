@@ -6,13 +6,13 @@ import { IImage } from './types';
 import mongoose, { ObjectId } from 'mongoose';
 import { Image } from './model';
 import { ImageStatus } from '../../constants';
-import ProjectService from '../project/service';
 
 const region = config.aws.s3.region;
 const s3 = new aws.S3({
   accessKeyId: config.aws.keyId,
   secretAccessKey: config.aws.secretAccessKey,
   region,
+  signatureVersion: 's3v4',
 });
 
 const defaultExtension = 'png';
