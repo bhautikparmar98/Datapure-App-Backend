@@ -9,7 +9,8 @@ export default ({ app }: { app: express.Application }): void => {
   //load cors
   app.use(
     cors({
-      origin: '*',
+      credentials: true,
+      origin: config.clientURL,
     })
   );
 
