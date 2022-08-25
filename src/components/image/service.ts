@@ -6,6 +6,7 @@ import { IImage } from './types';
 import mongoose, { ObjectId } from 'mongoose';
 import { Image } from './model';
 import { ImageStatus } from '../../constants';
+import AnnotationService from '../annotation/service';
 
 const region = config.aws.s3.region;
 const s3 = new aws.S3({
@@ -63,6 +64,42 @@ const createImages = async (
   return results.map((r) => r._id);
 };
 
+const createImagesWithAnnotations = async (
+  images: { url: string; fileName: string; annotations: any }[],
+  projectId: any,
+  classes: { id: any; _id: string }[],
+  annotationType: string
+): Promise<any[]> => {
+  const payload = images.map((i) => ({
+    src: i.url,
+    fileName: i.fileName,
+    projectId: new mongoose.Types.ObjectId(projectId),
+    status: annotationType,
+  }));
+
+  const results = await Image.insertMany(payload);
+
+  for (let i = 0; i < results.length; i++) {
+    const id = results[i]._id.toString();
+    const imageAnnotations = images[i]?.annotations;
+
+    if (imageAnnotations && imageAnnotations.length) {
+      const annotationsIds = await AnnotationService.createPreAnnotations(
+        imageAnnotations,
+        id,
+        classes
+      );
+
+      // update the image with the annotations addedp
+      await Image.findByIdAndUpdate(id, {
+        $set: { annotationIds: [...annotationsIds] },
+      });
+    }
+  }
+
+  return results.map((r) => r._id);
+};
+
 const getProjectImages = async (projectId: string) => {
   const images = await Image.find({ projectId });
   return images;
@@ -113,7 +150,7 @@ const equallyDistributeImagesBetweenAnnotators = async (
       // image is finished but we need to count it for it's perspective annotator
       // if annotator in our coming list
       // it's not possible to exist an image with no annotator in those status
-      if (annoMap[img.annotatorId!.toString()]) {
+      if (img?.annotatorId && annoMap[img.annotatorId.toString()]) {
         annoMap[img.annotatorId!.toString()] =
           annoMap[img.annotatorId!.toString()] + 1;
         distributedImagesCount++;
@@ -324,5 +361,6 @@ const ImageService = {
   getProjectRedoImageForAnnotator,
   getProjectImagesWithAnnotations,
   getProjectPendingReviewImageForClient,
+  createImagesWithAnnotations,
 };
 export default ImageService;

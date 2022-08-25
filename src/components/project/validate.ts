@@ -25,6 +25,45 @@ export const CreateProject = Joi.object({
     .required(),
 });
 
+export const CreatePreAnnotatedProjectSchema = Joi.object({
+  name: Joi.string().min(2).max(50).required(),
+  dueAt: Joi.date().required(),
+  type: Joi.string()
+    .valid(AnnotationTypes.IMAGE_ANNOTATION, AnnotationTypes.TEXT_ANNOTATION)
+    .required(),
+  images: Joi.array()
+    .items(
+      Joi.object({
+        url: Joi.string().required(),
+        fileName: Joi.string().required(),
+        annotations: Joi.array()
+          .items(
+            Joi.object({
+              x: Joi.number().required(),
+              y: Joi.number().required(),
+              width: Joi.number().required(),
+              height: Joi.number().required(),
+              id: Joi.any(),
+              type: Joi.string().required(),
+              classId: Joi.any().required(),
+            })
+          )
+          .required(),
+      })
+    )
+    .required(),
+  annotationType: Joi.string().required(),
+  classes: Joi.array()
+    .items(
+      Joi.object({
+        name: Joi.string().min(2).max(50).required(),
+        color: Joi.string().min(2).max(50).required(),
+        id: Joi.any().required(),
+      })
+    )
+    .required(),
+});
+
 export const AddImageToProjectSchema = Joi.object({
   images: Joi.array()
     .items(

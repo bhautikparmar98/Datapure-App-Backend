@@ -65,6 +65,80 @@ const createProject: RequestHandler = async (req, res) => {
   }
 };
 
+const createPreAnnotatedProject: RequestHandler = async (req, res) => {
+  try {
+    const permission = ac.can(req.user.role).createOwn('project');
+    if (!permission.granted)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    const { name, dueAt, type, classes, images, annotationType } = req.body;
+
+    if (
+      annotationType !== ImageStatus.PENDING_ANNOTATION &&
+      annotationType !== ImageStatus.PENDING_CLIENT_REVIEW
+    ) {
+      return res
+        .status(400)
+        .send(appResponse('Invalid annotation type', false));
+    }
+
+    const project = new Project({
+      name,
+      dueAt,
+      type,
+      classes,
+      imagesIds: [],
+      userId: req.user.id,
+      finished: false,
+      imagesCount: 0,
+      annotationCount: 0,
+      annotationInProgressCount: 0,
+      clientReviewCount: 0,
+      doneCount: 0,
+      qaCount: 0,
+      redoCount: 0,
+
+      assignedAnnotators: [],
+      assignedQAs: [],
+    });
+
+    const enhancedClasses: any[] = [];
+    classes.forEach((element: any, index: number) => {
+      enhancedClasses.push({ ...element, _id: project.classes[index]._id });
+    });
+
+    // save to get the project id
+    await project.save();
+
+    // save images with project id
+    const imagesIds = await ImageService.createImagesWithAnnotations(
+      images,
+      project._id.toString() as any,
+      enhancedClasses,
+      annotationType
+    );
+
+    // updating images ids and count
+    project.imagesIds = imagesIds as any;
+    project.imagesCount = imagesIds.length;
+
+    if (annotationType === ImageStatus.PENDING_ANNOTATION)
+      project.annotationCount = imagesIds.length;
+    else if (annotationType === ImageStatus.PENDING_CLIENT_REVIEW)
+      project.clientReviewCount = imagesIds.length;
+
+    // save again after updating the counts
+    await project.save();
+
+    res.status(201).send({ project: project.toJSON() });
+  } catch (err) {
+    logger.error(err);
+
+    const response = appResponse('Error creating a project.', false);
+    res.status(500).send(response);
+  }
+};
+
 const addImages: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
@@ -242,8 +316,6 @@ const getAnnotatorImagesForProject: RequestHandler = async (req, res) => {
       return res.status(403).send(appResponse('You are not allowed.', false));
 
     let images = [];
-
-    console.log('redo', redo, typeof redo);
 
     if (redo === 'true')
       images = await ImageService.getProjectRedoImageForAnnotator(
@@ -426,6 +498,7 @@ export {
   getQAImagesForProject,
   downloadOutputFile,
   getClientImagesForProject,
+  createPreAnnotatedProject,
 };
 
 // --*-------------- PRIVATE

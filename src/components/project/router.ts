@@ -10,6 +10,7 @@ import {
   AssignQAToProjectSchema,
   CreateProject,
   AssignAnnotatorsToProjectSchema,
+  CreatePreAnnotatedProjectSchema,
 } from './validate';
 
 const router = Router();
@@ -18,6 +19,11 @@ const router = Router();
 router.use(auth);
 
 router.post('/', celebrate({ body: CreateProject }), controller.createProject);
+router.post(
+  '/preAnnotated',
+  celebrate({ body: CreatePreAnnotatedProjectSchema }),
+  controller.createPreAnnotatedProject
+);
 router.get('/:id/images', controller.getProjectImages);
 router.get('/:id/annotator/images', controller.getAnnotatorImagesForProject);
 router.get('/:id/qa/images', controller.getQAImagesForProject);
