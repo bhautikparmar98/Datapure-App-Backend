@@ -39,16 +39,18 @@ const finishAnnotation: RequestHandler = async (req, res) => {
 
     if (
       image.status !== ImageStatus.ANNOTATION_INPROGRESS &&
-      image.status !== ImageStatus.PENDING_ANNOTATION
+      image.status !== ImageStatus.PENDING_ANNOTATION &&
+      image.status !== ImageStatus.PENDING_REDO
     )
       return res
         .status(400)
         .send(appResponse('This Image is invalid state', false));
 
-    const key =
-      image.status === ImageStatus.ANNOTATION_INPROGRESS
-        ? 'annotationInProgressCount'
-        : 'annotationCount';
+    let key = 'annotationCount';
+
+    if (image.status === ImageStatus.ANNOTATION_INPROGRESS)
+      key = 'annotationInProgressCount';
+    else if (image.status === ImageStatus.PENDING_REDO) key = 'redoCount';
 
     ProjectService.updateCount(image.projectId.toString(), {
       qaCount: 1,
