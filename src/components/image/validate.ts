@@ -24,6 +24,7 @@ const AddAnnotationSchema = Joi.object({
               ShapeType.LINE,
               ShapeType.ERASER
             ),
+            fill: Joi.any(),
           })
         ),
       })
