@@ -25,6 +25,8 @@ const AddAnnotationSchema = Joi.object({
               ShapeType.ERASER
             ),
             fill: Joi.any(),
+            opacity: Joi.any(),
+            stroke: Joi.any(),
           })
         ),
       })

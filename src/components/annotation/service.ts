@@ -4,7 +4,16 @@ import { IAnnotation } from './types';
 const createAnnotations = async (
   annotations: IAnnotation[]
 ): Promise<any[]> => {
-  const results = await Annotation.insertMany(annotations);
+  const purifiedAnnotations = annotations.map((a) => {
+    const newShapes = a.shapes.map((s) => {
+      const { x, y, width, height, id, points, type } = s;
+      return { x, y, width, height, id, points, type };
+    });
+
+    return { ...a, shapes: newShapes };
+  });
+
+  const results = await Annotation.insertMany(purifiedAnnotations);
   return results.map((r) => r._id);
 };
 
