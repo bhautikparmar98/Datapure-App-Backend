@@ -64,6 +64,46 @@ const createImages = async (
   return results.map((r) => r._id);
 };
 
+const removeImages = async (projectId: string, imagesIds: string[]) => {
+  const images = await Image.find({ _id: { $in: imagesIds } });
+
+  // check to see if there are any images does not relate to this project or not
+  for (let i = 0; i < images.length; i++) {
+    const img = images[i];
+    if (img.projectId.toString() !== projectId)
+      throw new Error('Invalid image related to this project');
+
+    if (
+      !(
+        img.status === ImageStatus.PENDING_ANNOTATION ||
+        img.status === ImageStatus.ANNOTATION_INPROGRESS
+      )
+    )
+      throw new Error('Invalid image status');
+  }
+
+  // deleting object from s3
+  const bucketImages = images.map((img) => ({
+    Key: '/' + img.src.split('/').reverse()[0],
+  }));
+
+  await s3
+    .deleteObjects(
+      {
+        Bucket: config.aws.s3.bucket,
+        Delete: { Objects: bucketImages },
+      },
+      async (err, data) => {
+        if (err) {
+          console.log('err', err);
+          throw new Error('Something wrong with deleting s3 images ');
+        }
+        await Image.deleteMany({ _id: { $in: imagesIds } });
+      }
+    )
+    .promise();
+};
+
 const createImagesWithAnnotations = async (
   images: { url: string; fileName: string; annotations: any }[],
   projectId: any,
@@ -362,5 +402,6 @@ const ImageService = {
   getProjectImagesWithAnnotations,
   getProjectPendingReviewImageForClient,
   createImagesWithAnnotations,
+  removeImages,
 };
 export default ImageService;

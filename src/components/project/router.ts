@@ -5,12 +5,12 @@ import accessControlMiddleware from '../../middlewares/ac';
 import auth from '../../middlewares/auth';
 import * as controller from './controller';
 import {
+  AddClassesSchema,
   AddImageToProjectSchema,
   AssignAdminsToProjectSchema,
-  AssignQAToProjectSchema,
-  CreateProject,
-  AssignAnnotatorsToProjectSchema,
   CreatePreAnnotatedProjectSchema,
+  CreateProject,
+  RemoveImagesSchema,
 } from './validate';
 
 const router = Router();
@@ -24,6 +24,7 @@ router.post(
   celebrate({ body: CreatePreAnnotatedProjectSchema }),
   controller.createPreAnnotatedProject
 );
+router.get('/:id', controller.getProject);
 router.get('/:id/images', controller.getProjectImages);
 router.get('/:id/annotator/images', controller.getAnnotatorImagesForProject);
 router.get('/:id/qa/images', controller.getQAImagesForProject);
@@ -33,6 +34,18 @@ router.post(
   '/:id/images',
   celebrate({ body: AddImageToProjectSchema }),
   controller.addImages
+);
+
+router.put(
+  '/:id/images/delete',
+  celebrate({ body: RemoveImagesSchema }),
+  controller.removeImages
+);
+
+router.put(
+  '/:id/addClasses',
+  celebrate({ body: AddClassesSchema }),
+  controller.addClasses
 );
 router.put(
   '/:id/assign/admin',

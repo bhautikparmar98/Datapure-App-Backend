@@ -65,6 +65,83 @@ const createProject: RequestHandler = async (req, res) => {
   }
 };
 
+const getProject: RequestHandler = async (req, res) => {
+  const user = req.user;
+  const { id } = req.params;
+  try {
+    const project = await Project.findById(id as string);
+
+    if (!project)
+      return res.status(400).send(appResponse('Invalid project id', false));
+
+    if (user.role === Roles.CLIENT && user.id !== project.userId)
+      return res.status(403).send(appResponse('You are not allowed', false));
+    if (user.role === Roles.ADMIN && user.id !== project.adminId)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    return res.status(200).send({ project: project.toJSON() });
+  } catch (err) {
+    logger.error(err);
+
+    const response = appResponse('Error get one project.', false);
+    res.status(500).send(response);
+  }
+};
+
+const addClasses: RequestHandler = async (req, res) => {
+  try {
+    const user = req.user;
+    const { id } = req.params;
+    const { classes } = req.body;
+
+    const project = await Project.findById(id as string);
+
+    if (!project)
+      return res.status(400).send(appResponse('Invalid project id', false));
+
+    if (user.role === Roles.CLIENT && user.id !== project.userId)
+      return res.status(403).send(appResponse('You are not allowed', false));
+    if (user.role === Roles.ADMIN && user.id !== project.adminId)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    await ProjectService.addClasses(id, classes);
+
+    res.status(201).send({ success: true });
+  } catch (err) {
+    logger.error(err);
+
+    const response = appResponse('Error adding classes to project.', false);
+    res.status(500).send(response);
+  }
+};
+
+const removeImages: RequestHandler = async (req, res) => {
+  try {
+    const user = req.user;
+    const { id } = req.params;
+    const { imageIds } = req.body;
+
+    const project = await Project.findById(id as string);
+
+    if (!project)
+      return res.status(400).send(appResponse('Invalid project id', false));
+
+    if (user.role === Roles.CLIENT && user.id !== project.userId)
+      return res.status(403).send(appResponse('You are not allowed', false));
+    if (user.role === Roles.ADMIN && user.id !== project.adminId)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    await ImageService.removeImages(id, imageIds);
+
+    res.status(200).send({ success: true });
+  } catch (err) {
+    logger.error(err);
+
+    const response = appResponse('Error removing images from project.', false);
+    res.status(500).send(response);
+  }
+};
+
 const createPreAnnotatedProject: RequestHandler = async (req, res) => {
   try {
     const permission = ac.can(req.user.role).createOwn('project');
@@ -499,6 +576,9 @@ export {
   downloadOutputFile,
   getClientImagesForProject,
   createPreAnnotatedProject,
+  getProject,
+  addClasses,
+  removeImages,
 };
 
 // --*-------------- PRIVATE

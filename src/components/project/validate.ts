@@ -75,6 +75,21 @@ export const AddImageToProjectSchema = Joi.object({
     .required(),
 });
 
+export const RemoveImagesSchema = Joi.object({
+  imageIds: Joi.array().items(Joi.string()).required(),
+});
+
+export const AddClassesSchema = Joi.object({
+  classes: Joi.array()
+    .items(
+      Joi.object({
+        name: Joi.string().required(),
+        color: Joi.string().required(),
+      })
+    )
+    .required(),
+});
+
 export const AssignAdminsToProjectSchema = Joi.object({
   adminId: Joi.number(),
 });

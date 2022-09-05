@@ -2,6 +2,7 @@ import { Project } from './model';
 import fs from 'fs';
 import path from 'path';
 import mkdirp from 'mkdirp';
+import { ProjectClass } from './types';
 
 const getRemovedIds = (prevIds: number[], newIds: number[]): number[] => {
   return prevIds.filter((prevId) => !newIds.includes(prevId));
@@ -41,6 +42,12 @@ const updateCount = async (
   await Project.findByIdAndUpdate(projectId, { $inc: { ...data } });
 };
 
+const addClasses = async (projectId: string, classes: ProjectClass[]) => {
+  await Project.findByIdAndUpdate(projectId, {
+    $push: { classes: { $each: classes } },
+  });
+};
+
 const createOutputFile = async (
   projectName: string,
   content: string
@@ -73,6 +80,7 @@ const ProjectService = {
   updateCount,
   createOutputFile,
   deleteOutputFile,
+  addClasses,
 };
 
 export default ProjectService;
