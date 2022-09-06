@@ -29,7 +29,7 @@ const createPreAnnotations = async (
   });
 
   const purifiedAnnotations = annotations.map((a) => ({
-    shapes: [...annotations],
+    shapes: [{ ...a }],
     classId: classesMap[a.classId as any],
     imageId: id,
     visible: true,
