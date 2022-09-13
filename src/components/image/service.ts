@@ -8,7 +8,10 @@ import { Image } from './model';
 import { ImageStatus } from '../../constants';
 import AnnotationService from '../annotation/service';
 
+// get the s3 region
 const region = config.aws.s3.region;
+
+// get s3 object
 const s3 = new aws.S3({
   accessKeyId: config.aws.keyId,
   secretAccessKey: config.aws.secretAccessKey,
@@ -16,15 +19,19 @@ const s3 = new aws.S3({
   signatureVersion: 's3v4',
 });
 
+// default image extension
 const defaultExtension = 'png';
 
 const getSignedUrl = (file: string) => {
   const bucket = config.aws.s3.bucket;
+  // split the file name
   const result = file.split('.');
 
   const fileName = file;
+  // the extension is the last item in the name ex .jpg
   let extension = result[result.length - 1];
 
+  // if not found extension use the default extension
   if (!extension) {
     extension = defaultExtension;
   }
@@ -35,6 +42,7 @@ const getSignedUrl = (file: string) => {
     contentType: mime.contentType(extension),
   };
 
+  // build the s3 params
   const params = {
     Bucket: contentStorageBucketName,
     Key: contentStorageKey,
@@ -43,9 +51,12 @@ const getSignedUrl = (file: string) => {
     ACL: 'public-read',
   };
 
+  // get a preassigned url to the image
   const presignedURL = s3.getSignedUrl('putObject', params);
+  // build the expected url that the image will live on
   const url = `https://${bucket}.s3.${region}.amazonaws.com/${contentStorageKey}`;
 
+  // return presigned url and url and fileName
   return { presignedURL, url, fileName };
 };
 
@@ -53,6 +64,7 @@ const createImages = async (
   images: { url: string; fileName: string }[],
   projectId: any
 ): Promise<any[]> => {
+  // build the payload for the insert many images
   const payload = images.map((i) => ({
     src: i.url,
     fileName: i.fileName,
@@ -64,7 +76,9 @@ const createImages = async (
   return results.map((r) => r._id);
 };
 
+// this method is responsible for removing images
 const removeImages = async (projectId: string, imagesIds: string[]) => {
+  // find images that want to delete
   const images = await Image.find({ _id: { $in: imagesIds } });
 
   // check to see if there are any images does not relate to this project or not
@@ -73,6 +87,7 @@ const removeImages = async (projectId: string, imagesIds: string[]) => {
     if (img.projectId.toString() !== projectId)
       throw new Error('Invalid image related to this project');
 
+    // validate the status
     if (
       !(
         img.status === ImageStatus.PENDING_ANNOTATION ||
@@ -98,6 +113,8 @@ const removeImages = async (projectId: string, imagesIds: string[]) => {
           console.log('err', err);
           throw new Error('Something wrong with deleting s3 images ');
         }
+
+        // if success delete images from our database
         await Image.deleteMany({ _id: { $in: imagesIds } });
       }
     )
@@ -117,34 +134,40 @@ const createImagesWithAnnotations = async (
     status: annotationType,
   }));
 
+  // insert images to the database
   const results = await Image.insertMany(payload);
 
+  // loop through the images to create it's annotations
   for (let i = 0; i < results.length; i++) {
     const id = results[i]._id.toString();
     const imageAnnotations = images[i]?.annotations;
 
     if (imageAnnotations && imageAnnotations.length) {
+      // create annotations with the image id and get the generated ids for annotations
       const annotationsIds = await AnnotationService.createPreAnnotations(
         imageAnnotations,
         id,
         classes
       );
 
-      // update the image with the annotations addedp
+      // update the image with the annotations added
       await Image.findByIdAndUpdate(id, {
         $set: { annotationIds: [...annotationsIds] },
       });
     }
   }
 
+  // return the image ids that is created
   return results.map((r) => r._id);
 };
 
+// function that return images for a specific image id.
 const getProjectImages = async (projectId: string) => {
   const images = await Image.find({ projectId });
   return images;
 };
 
+// function that distribute the images between the project annotators
 const equallyDistributeImagesBetweenAnnotators = async (
   projectId: string,
   annotatorsIds: number[]
@@ -245,6 +268,7 @@ const equallyDistributeImagesBetweenAnnotators = async (
   await Promise.all(promises);
 };
 
+// function that return statics for qa
 const getQAStatics = async (projectId: string, userId: number) => {
   const images = await Image.find({ projectId, qaId: userId });
 
@@ -256,6 +280,7 @@ const getQAStatics = async (projectId: string, userId: number) => {
   return { pendingQA, submitted };
 };
 
+// function that return statics for annotator
 const getAnnotatorStatics = async (projectId: string, userId: number) => {
   const images = await Image.find({ projectId, annotatorId: userId });
 
@@ -272,8 +297,11 @@ const getAnnotatorStatics = async (projectId: string, userId: number) => {
   return { pendingAnnotation, pendingRedo, submitted };
 };
 
+// function that is responsible for assign qa to the image
 const assignQA = async (qaIds: number[], projectId: string, id: string) => {
+  // if no qas we can't assign anyone
   if (qaIds.length === 0) return Promise.resolve();
+  // if it's one qa then update the image with the first one
   if (qaIds.length === 1) {
     await Image.findByIdAndUpdate(id, { $set: { qaId: qaIds[0] } });
     return;

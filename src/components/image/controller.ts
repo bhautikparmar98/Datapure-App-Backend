@@ -9,13 +9,16 @@ import ProjectService from '../project/service';
 import { Image } from './model';
 import ImageService from './service';
 
-// only client will use this method to create a new register
+// use it to get a sign url to upload it to s3
 const signUrl: RequestHandler = async (req, res) => {
   try {
+    // get files from body
     const { files } = req.body;
 
+    // loop through files and for every file get signedURL
     const result = files.map((file: string) => ImageService.getSignedUrl(file));
 
+    // return signed URLS
     res.status(200).send({ files: result });
   } catch (err) {
     logger.error(err);
@@ -24,19 +27,25 @@ const signUrl: RequestHandler = async (req, res) => {
   }
 };
 
+// this method is used to finish annotating of the image
 const finishAnnotation: RequestHandler = async (req, res) => {
   try {
+    // the id of image
     const { id } = req.params;
     const userId = req.user.id;
 
+    // get image with id
     const image = await Image.findById(id);
 
+    // if image not found return bad request
     if (!image)
       return res.status(400).send(appResponse('Invalid Image id', false));
 
+    // make sure that the one who call this api is the annotator that is assigned to the image
     if (image.annotatorId !== userId)
       return res.status(403).send(appResponse('You are not allowed.', false));
 
+    // validate the image status
     if (
       image.status !== ImageStatus.ANNOTATION_INPROGRESS &&
       image.status !== ImageStatus.PENDING_ANNOTATION &&
@@ -46,23 +55,33 @@ const finishAnnotation: RequestHandler = async (req, res) => {
         .status(400)
         .send(appResponse('This Image is invalid state', false));
 
+    // key that will decrease count set it as annotationCount as default.
     let key = 'annotationCount';
 
+    // if image is in status annotation in progress then we should decrease the annotationInProgressCount
     if (image.status === ImageStatus.ANNOTATION_INPROGRESS)
       key = 'annotationInProgressCount';
+    // if image is in redo status we should decrease redoCount
     else if (image.status === ImageStatus.PENDING_REDO) key = 'redoCount';
 
+    // update project with the new counts, decrease the key and increase the QA status
     ProjectService.updateCount(image.projectId.toString(), {
       qaCount: 1,
       [key]: -1,
     });
 
+    // put image in pending QA
     image.status = ImageStatus.PENDING_QA;
+    // set the date that the image is finished annotated.
     image.dateAnnotated = new Date();
 
+    // get QAs that is assigned to this project
     const qaIds = await ProjectService.getQAsIds(image.projectId.toString());
+
+    // assign qa to this image to start checking it;
     if (qaIds) ImageService.assignQA(qaIds, image.projectId.toString(), id);
 
+    // save the image
     await image.save();
 
     res.status(200).send({ success: true });
@@ -73,19 +92,24 @@ const finishAnnotation: RequestHandler = async (req, res) => {
   }
 };
 
+// this function is responsible for making the image in REDO state
 const redoHandler: RequestHandler = async (req, res) => {
   try {
+    // image id
     const { id } = req.params;
     const userId = req.user.id;
 
+    // find image with this id
     const image = await Image.findById(id);
 
     if (!image)
       return res.status(400).send(appResponse('Invalid Image id', false));
 
+    // make sure that the calling one is the qa that is assigned to the image.
     if (image.qaId !== userId)
       return res.status(403).send(appResponse('You are not allowed.', false));
 
+    // make sure the requested image in PENDING_QA
     if (image.status !== ImageStatus.PENDING_QA)
       return res
         .status(400)
@@ -93,11 +117,13 @@ const redoHandler: RequestHandler = async (req, res) => {
 
     image.status = ImageStatus.PENDING_REDO;
 
+    // update counts
     ProjectService.updateCount(image.projectId.toString(), {
       qaCount: -1,
       redoCount: 1,
     });
 
+    // save the image
     await image.save();
 
     res.status(200).send({ success: true });
@@ -108,6 +134,7 @@ const redoHandler: RequestHandler = async (req, res) => {
   }
 };
 
+// this function is responsible for approving the image and update the status from qa to ready for client review
 const qaApproveAnnotation: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
@@ -118,21 +145,26 @@ const qaApproveAnnotation: RequestHandler = async (req, res) => {
     if (!image)
       return res.status(400).send(appResponse('Invalid Image id', false));
 
+    // make sure that the calling one is the qa that is assigned to the image
     if (image.qaId !== userId)
       return res.status(403).send(appResponse('You are not allowed.', false));
 
+    // validate the status of the image
     if (image.status !== ImageStatus.PENDING_QA)
       return res
         .status(400)
         .send(appResponse('This Image is invalid state', false));
 
+    // update the status of the image with PENDING CLIENT REVIEW
     image.status = ImageStatus.PENDING_CLIENT_REVIEW;
 
+    // update the counts
     ProjectService.updateCount(image.projectId.toString(), {
       qaCount: -1,
       clientReviewCount: 1,
     });
 
+    // save the image
     await image.save();
 
     res.status(200).send({ success: true });
@@ -143,6 +175,7 @@ const qaApproveAnnotation: RequestHandler = async (req, res) => {
   }
 };
 
+// this function is responsible for updating the status of the image from waiting client review to done
 const clientReviewApprove: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
@@ -161,13 +194,16 @@ const clientReviewApprove: RequestHandler = async (req, res) => {
       return res.status(403).send(appResponse('You are not allowed.', false));
     }
 
+    // validate the status of the image
     if (image.status !== ImageStatus.PENDING_CLIENT_REVIEW)
       return res
         .status(400)
         .send(appResponse('This Image is invalid state', false));
 
+    // update the status
     image.status = ImageStatus.DONE;
 
+    // update the count
     ProjectService.updateCount(image.projectId.toString(), {
       doneCount: 1,
       clientReviewCount: -1,
@@ -183,6 +219,7 @@ const clientReviewApprove: RequestHandler = async (req, res) => {
   }
 };
 
+// this is function that is responsible to disapprove client
 const clientReviewDisApprove: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
@@ -201,18 +238,22 @@ const clientReviewDisApprove: RequestHandler = async (req, res) => {
       return res.status(403).send(appResponse('You are not allowed.', false));
     }
 
+    // validate the status
     if (image.status !== ImageStatus.PENDING_CLIENT_REVIEW)
       return res
         .status(400)
         .send(appResponse('This Image is invalid state', false));
 
+    // update the image status
     image.status = ImageStatus.PENDING_REDO;
 
+    // update the project count
     ProjectService.updateCount(image.projectId.toString(), {
       clientReviewCount: -1,
       redoCount: 1,
     });
 
+    // save the image
     await image.save();
 
     res.status(200).send({ success: true });
@@ -223,6 +264,7 @@ const clientReviewDisApprove: RequestHandler = async (req, res) => {
   }
 };
 
+// this function is responsible for adding annotations for image
 const addingAnnotation: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
@@ -246,6 +288,12 @@ const addingAnnotation: RequestHandler = async (req, res) => {
       return res.status(403).send(appResponse('You are not allowed.', false));
     }
 
+    /**
+     * this way is must change in the future now currently we are removing all annotations and adding them all
+     * in the future we should add the ability to add and delete and update without not sending all the
+     * annotations
+     */
+
     // remove all previous annotations
     AnnotationService.removeAllForImage(image._id.toString());
 
@@ -267,6 +315,7 @@ const addingAnnotation: RequestHandler = async (req, res) => {
   }
 };
 
+// get comments for image
 const getComments: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
@@ -290,6 +339,7 @@ const getComments: RequestHandler = async (req, res) => {
       return res.status(403).send(appResponse('You are not allowed.', false));
     }
 
+    // get the comments for the image
     const comments = await ImageCommentService.getCommentsForImage(id);
 
     res.status(200).send({ comments });

@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 // dotenv will silently fail on GitHub Actions, otherwise this breaks deployment
 dotenv.config();
 
+// export config as javascript object
 export default {
   application: {
     port: process.env.PORT || '3000',

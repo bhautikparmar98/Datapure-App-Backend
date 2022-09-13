@@ -1,7 +1,10 @@
-import { AccessControl } from 'accesscontrol';
 import { Actions, Resources } from '../constants';
 import * as roles from '../constants/roles';
 
+/**
+ * This is the grants list that is responsible for the accessing routes
+ * based on this object.
+ */
 export const grantList = [
   {
     role: roles.SUPER_ADMIN,

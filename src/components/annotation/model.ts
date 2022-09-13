@@ -1,6 +1,7 @@
-import mongoose, { Model, Schema, ObjectId } from 'mongoose';
+import mongoose, { Model, Schema } from 'mongoose';
 import { IAnnotation } from './types';
 
+// embedded schema for shape that is used in the annotation schema
 const ShapeSchema = new Schema({
   x: {
     type: Number,
@@ -26,6 +27,7 @@ const ShapeSchema = new Schema({
   },
 });
 
+// annotation schema
 const AnnotationSchema = new Schema<IAnnotation>(
   {
     classId: {
@@ -47,6 +49,7 @@ const AnnotationSchema = new Schema<IAnnotation>(
   }
 );
 
+// create the annotation model from schema and export it
 export const Annotation: Model<IAnnotation> = mongoose.model(
   'Annotation',
   AnnotationSchema
