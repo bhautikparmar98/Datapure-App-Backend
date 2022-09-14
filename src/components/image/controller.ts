@@ -295,7 +295,7 @@ const addingAnnotation: RequestHandler = async (req, res) => {
      */
 
     // remove all previous annotations
-    AnnotationService.removeAllForImage(image._id.toString());
+    AnnotationService.removeAnnotationsWithIds(image.annotationIds);
 
     // create new annotations
     const addedAnnotationIds = await AnnotationService.createAnnotations(
@@ -303,9 +303,9 @@ const addingAnnotation: RequestHandler = async (req, res) => {
     );
 
     // update images with the ids
-    image.annotationIds = [...addedAnnotationIds];
-
-    await image.save();
+    await Image.findByIdAndUpdate(id, {
+      $set: { annotationIds: addedAnnotationIds },
+    });
 
     res.status(200).send({ success: true });
   } catch (err) {

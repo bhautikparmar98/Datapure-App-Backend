@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongodb';
 import { Annotation } from './model';
 import { IAnnotation } from './types';
 
@@ -57,11 +58,16 @@ const removeAllForImage = async (imageId: string): Promise<void> => {
   await Annotation.deleteMany({ imageId });
 };
 
+const removeAnnotationsWithIds = async (ids: ObjectId[]) => {
+  await Annotation.deleteMany({ _id: { $in: ids } });
+};
+
 // export those  functions as object.
 const AnnotationService = {
   createAnnotations,
   createPreAnnotations,
   removeAllForImage,
+  removeAnnotationsWithIds,
 };
 
 export default AnnotationService;
