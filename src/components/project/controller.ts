@@ -65,6 +65,52 @@ const createProject: RequestHandler = async (req, res) => {
   }
 };
 
+const CreateProjectForHUmanInLoop: RequestHandler = async (req, res) => {
+  try {
+    const permission = ac.can(req.user.role).createOwn('project');
+    if (!permission.granted)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    const { name, dueAt, classes, dataType } = req.body;
+
+    const project = new Project({
+      name,
+      dueAt,
+      type: dataType, //set type as HUMAN_IN_LOOP
+      classes,
+      imagesIds: [],
+      userId: req.user.id,
+      finished: false,
+      imagesCount: 0,
+      annotationCount: 0,
+      annotationInProgressCount: 0,
+      clientReviewCount: 0,
+      doneCount: 0,
+      qaCount: 0,
+      redoCount: 0,
+
+      assignedAnnotators: [],
+      assignedQAs: [],
+    });
+
+    // save to get the project id
+    await project.save();
+
+    project.imagesCount = 0;
+    project.annotationCount = 0;
+
+    // save again after updating the counts
+    await project.save();
+
+    res.status(201).send({ project: project.toJSON() });
+  } catch (err) {
+    logger.error(err);
+
+    const response = appResponse('Error creating a project.', false);
+    res.status(500).send(response);
+  }
+};
+
 const getProject: RequestHandler = async (req, res) => {
   const user = req.user;
   const { id } = req.params;
@@ -566,6 +612,7 @@ const downloadOutputFile: RequestHandler = async (req, res) => {
 
 export {
   createProject,
+  CreateProjectForHUmanInLoop,
   getProjectImages,
   addImages,
   assignAdminToProject,

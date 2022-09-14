@@ -10,6 +10,7 @@ import {
   AssignAdminsToProjectSchema,
   CreatePreAnnotatedProjectSchema,
   CreateProject,
+  CreateProjectForHUmanInLoopSchema,
   RemoveImagesSchema,
 } from './validate';
 
@@ -23,6 +24,11 @@ router.post(
   '/preAnnotated',
   celebrate({ body: CreatePreAnnotatedProjectSchema }),
   controller.createPreAnnotatedProject
+);
+router.post(
+  '/humanInLoop',
+  celebrate({ body: CreateProjectForHUmanInLoopSchema }),
+  controller.CreateProjectForHUmanInLoop
 );
 router.get('/:id', controller.getProject);
 router.get('/:id/images', controller.getProjectImages);
