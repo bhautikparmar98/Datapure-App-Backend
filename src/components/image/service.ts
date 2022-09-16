@@ -334,6 +334,7 @@ const assignQA = async (qaIds: number[], projectId: string, id: string) => {
     }
   });
 
+  // update the qa for image with qa id
   await await Image.findByIdAndUpdate(id, { $set: { qaId: minimumId } });
 };
 
@@ -342,6 +343,7 @@ const getProjectImageForAnnotator = async (
   annotatorId: number,
   take = 10
 ) => {
+  // get image with pending annotations and annotation in progress
   const images = await Image.find({
     projectId,
     annotatorId,
@@ -360,6 +362,7 @@ const getProjectRedoImageForAnnotator = async (
   annotatorId: number,
   take = 10
 ) => {
+  // find all images for this annotator in this project with pending redo status
   const images = await Image.find({
     projectId,
     annotatorId,
@@ -393,6 +396,7 @@ const getProjectPendingReviewImageForClient = async (
   projectId: string,
   take = 10
 ) => {
+  // find the image with project id with pending client review status
   const images = await Image.find({
     projectId,
     status: ImageStatus.PENDING_CLIENT_REVIEW,
@@ -408,6 +412,7 @@ const getProjectImagesWithAnnotations = async (
   projectId: string,
   statuses: string[]
 ) => {
+  // get images with a specific status for a project including the annotations for the images
   const images = await Image.find({
     projectId,
     status: { $in: statuses },

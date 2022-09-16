@@ -373,6 +373,7 @@ const addComment: RequestHandler = async (req, res) => {
       return res.status(403).send(appResponse('You are not allowed.', false));
     }
 
+    // create a comment to db
     await ImageCommentService.create({
       imageId: image._id,
       userId,

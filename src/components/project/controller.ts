@@ -74,11 +74,14 @@ const getProject: RequestHandler = async (req, res) => {
     if (!project)
       return res.status(400).send(appResponse('Invalid project id', false));
 
+    // to get the project as a client you should own the project
     if (user.role === Roles.CLIENT && user.id !== project.userId)
       return res.status(403).send(appResponse('You are not allowed', false));
+    // to get the project as an admin you should assigned to this project through super admin
     if (user.role === Roles.ADMIN && user.id !== project.adminId)
       return res.status(403).send(appResponse('You are not allowed', false));
 
+    // return project
     return res.status(200).send({ project: project.toJSON() });
   } catch (err) {
     logger.error(err);
@@ -88,6 +91,7 @@ const getProject: RequestHandler = async (req, res) => {
   }
 };
 
+// add classes to project
 const addClasses: RequestHandler = async (req, res) => {
   try {
     const user = req.user;
@@ -99,11 +103,14 @@ const addClasses: RequestHandler = async (req, res) => {
     if (!project)
       return res.status(400).send(appResponse('Invalid project id', false));
 
+    // to add classes to the project as a client you should own the project
     if (user.role === Roles.CLIENT && user.id !== project.userId)
       return res.status(403).send(appResponse('You are not allowed', false));
+    // to add classes to the project as an admin you should assigned to this project through super admin
     if (user.role === Roles.ADMIN && user.id !== project.adminId)
       return res.status(403).send(appResponse('You are not allowed', false));
 
+    // add classes to the project
     await ProjectService.addClasses(id, classes);
 
     res.status(201).send({ success: true });
@@ -115,6 +122,7 @@ const addClasses: RequestHandler = async (req, res) => {
   }
 };
 
+// remove images from the project
 const removeImages: RequestHandler = async (req, res) => {
   try {
     const user = req.user;
@@ -131,6 +139,7 @@ const removeImages: RequestHandler = async (req, res) => {
     if (user.role === Roles.ADMIN && user.id !== project.adminId)
       return res.status(403).send(appResponse('You are not allowed', false));
 
+    // call remove images from project
     await ImageService.removeImages(id, imageIds);
 
     res.status(200).send({ success: true });
@@ -142,6 +151,7 @@ const removeImages: RequestHandler = async (req, res) => {
   }
 };
 
+// create a pre-annotated project
 const createPreAnnotatedProject: RequestHandler = async (req, res) => {
   try {
     const permission = ac.can(req.user.role).createOwn('project');
@@ -150,6 +160,7 @@ const createPreAnnotatedProject: RequestHandler = async (req, res) => {
 
     const { name, dueAt, type, classes, images, annotationType } = req.body;
 
+    // the image status should be one of pending annotation or pending client review
     if (
       annotationType !== ImageStatus.PENDING_ANNOTATION &&
       annotationType !== ImageStatus.PENDING_CLIENT_REVIEW
@@ -159,6 +170,7 @@ const createPreAnnotatedProject: RequestHandler = async (req, res) => {
         .send(appResponse('Invalid annotation type', false));
     }
 
+    // create the project
     const project = new Project({
       name,
       dueAt,
@@ -199,6 +211,7 @@ const createPreAnnotatedProject: RequestHandler = async (req, res) => {
     project.imagesIds = imagesIds as any;
     project.imagesCount = imagesIds.length;
 
+    // know which status count will update
     if (annotationType === ImageStatus.PENDING_ANNOTATION)
       project.annotationCount = imagesIds.length;
     else if (annotationType === ImageStatus.PENDING_CLIENT_REVIEW)
@@ -230,15 +243,18 @@ const addImages: RequestHandler = async (req, res) => {
     if (!project)
       return res.status(400).send(appResponse('Invalid project id', false));
 
+    // create images
     const imagesIds = await ImageService.createImages(
       images as { url: string; fileName: string }[],
       project._id.toString() as any
     );
 
+    // update images ids in the project and update counts
     project.imagesIds = [...project.imagesIds, ...imagesIds] as any;
     project.imagesCount = project.imagesCount + imagesIds.length;
     project.annotationCount = project.annotationCount + imagesIds.length;
 
+    // save the project
     await project.save();
 
     // update the annotators with the new images
@@ -248,6 +264,7 @@ const addImages: RequestHandler = async (req, res) => {
       project.assignedAnnotators
     );
 
+    // return the added ids
     return res.status(200).send({ imagesIds });
   } catch (error) {
     logger.error(error);
@@ -270,6 +287,7 @@ const getProjectImages: RequestHandler = async (req, res) => {
     if (!project)
       return res.status(400).send(appResponse('Invalid project id', false));
 
+    // get project images by project id
     const images = await ImageService.getProjectImages(id);
 
     res.status(200).send({ images });
@@ -284,6 +302,7 @@ const assignAdminToProject: RequestHandler = async (req, res) => {
     const { id } = req.params;
     const { adminId } = req.body;
 
+    // make sure that the id sended in the body is an admin
     const isAdmin = await UserService.isAdmin(+adminId);
 
     if (!isAdmin)
@@ -294,12 +313,16 @@ const assignAdminToProject: RequestHandler = async (req, res) => {
     if (!project)
       return res.status(400).send(appResponse('Invalid project id', false));
 
+    // if the project already have an admin id we should decrement the number of working projects for the prev admin
     if (project.adminId)
       await UserService.decrementNumberOfWorkingProjects(project.adminId);
 
+    // increase the number of working project for this admin
     await UserService.incrementNumberOfWorkingProjects(+adminId);
+    // assign the new admin to the project
     project.adminId = +adminId;
 
+    // save...
     await project.save();
 
     res.status(200).send({ success: true });
@@ -324,13 +347,17 @@ const assignQAsToProject: RequestHandler = async (req, res) => {
     if (!project)
       return res.status(400).send(appResponse('Invalid project id', false));
 
+    // make sure that the user is the admin that assigned to this project
     if (project.adminId !== user.id)
       return res.status(403).send(appResponse('You are not allowed', false));
 
     // update number of working project for members
     await updateWorkingProjectNumberForMembers(project.assignedQAs, qaIds);
 
+    // update the assigned QAs
     project.assignedQAs = qaIds;
+
+    // save
     await project.save();
 
     res.status(200).send({ success: true });
@@ -355,6 +382,8 @@ const assignAnnotatorsToProject: RequestHandler = async (req, res) => {
     if (!project)
       return res.status(400).send(appResponse('Invalid project id', false));
 
+    // make sure that the user is the admin that assigned to this project
+
     if (project.adminId !== user.id)
       return res.status(403).send(appResponse('You are not allowed', false));
 
@@ -364,7 +393,10 @@ const assignAnnotatorsToProject: RequestHandler = async (req, res) => {
       annotatorIds
     );
 
+    // update assigned annotators
     project.assignedAnnotators = annotatorIds;
+
+    // save the project
     await project.save();
 
     // distribute images between annotators
@@ -387,19 +419,22 @@ const getAnnotatorImagesForProject: RequestHandler = async (req, res) => {
     const { take, redo } = req.query;
     const userId = req.user.id;
 
-    const isAnnotator = UserService.isAnnotator(userId);
+    // checking if the user is annotator
+    const isAnnotator = await UserService.isAnnotator(userId);
 
     if (!isAnnotator)
       return res.status(403).send(appResponse('You are not allowed.', false));
 
     let images = [];
 
+    // if redo = true we need to get the redo images for that annotator
     if (redo === 'true')
       images = await ImageService.getProjectRedoImageForAnnotator(
         id,
         userId,
         parseInt(take?.toString() || '100')
       );
+    // get the redo images for that annotator
     else
       images = await ImageService.getProjectImageForAnnotator(
         id,
@@ -407,6 +442,7 @@ const getAnnotatorImagesForProject: RequestHandler = async (req, res) => {
         parseInt(take?.toString() || '100')
       );
 
+    // build the images payload
     const imagesPayload = images.map((img) => ({
       _id: img._id.toString(),
       fileName: img.fileName,
@@ -434,14 +470,17 @@ const getClientImagesForProject: RequestHandler = async (req, res) => {
     if (!project)
       return res.status(400).send(appResponse('Invalid project id', false));
 
+    // make sure that the client own the project
     if (project.userId !== userId)
       return res.status(403).send(appResponse('You are not allowed', false));
 
+    // get pending review images for that client
     const images = await ImageService.getProjectPendingReviewImageForClient(
       id,
       parseInt(take?.toString() || '100')
     );
 
+    // build the payload
     const imagesPayload = images.map((img) => ({
       _id: img._id.toString(),
       fileName: img.fileName,
@@ -460,23 +499,27 @@ const getClientImagesForProject: RequestHandler = async (req, res) => {
     res.status(500).send(response);
   }
 };
+// get the images for qa
 const getQAImagesForProject: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
     const { take } = req.query;
     const userId = req.user.id;
 
-    const isQA = UserService.isQA(userId);
+    // check if the user is QA
+    const isQA = await UserService.isQA(userId);
 
     if (!isQA)
       return res.status(403).send(appResponse('You are not allowed.', false));
 
+    // get the images for that qa in this project
     const images = await ImageService.getProjectImageForQA(
       id,
       userId,
       parseInt(take?.toString() || '100')
     );
 
+    // build the payload
     const imagesPayload = images.map((img) => ({
       _id: img._id.toString(),
       fileName: img.fileName,
@@ -493,6 +536,7 @@ const getQAImagesForProject: RequestHandler = async (req, res) => {
   }
 };
 
+// download output file
 const downloadOutputFile: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
@@ -513,16 +557,19 @@ const downloadOutputFile: RequestHandler = async (req, res) => {
     if (user.role === Roles.CLIENT && user.id !== project.userId)
       return res.status(403).send(appResponse('You are not allowed.', false));
 
+    // get images with annotations with done and pending client review status
     const images = await ImageService.getProjectImagesWithAnnotations(id, [
       ImageStatus.DONE,
       ImageStatus.PENDING_CLIENT_REVIEW,
     ]);
 
+    // build a class map
     const classMap: any = {};
     project.classes.forEach((cl) => {
       classMap[cl._id.toString()] = cl;
     });
 
+    // build the output file structure
     const imagesPayload = images.map((img) => {
       return {
         url: img.src,
@@ -550,11 +597,14 @@ const downloadOutputFile: RequestHandler = async (req, res) => {
 
     const path = await ProjectService.createOutputFile(project.name, json);
 
+    // response with the file
     res.status(200).download(path, (error) => {
       if (error) {
         logger.error(error);
         throw new Error('can not send the file');
       }
+
+      // delete the output file after download finished
       ProjectService.deleteOutputFile(path);
     });
   } catch (error) {
@@ -587,6 +637,7 @@ const updateWorkingProjectNumberForMembers = async (
   prevWorkingIds: number[],
   newWorkingIds: number[]
 ): Promise<void> => {
+  // get the removed users to decrease the working project number for them
   const removedMembersIds = ProjectService.getRemovedIds(
     prevWorkingIds,
     newWorkingIds
@@ -602,6 +653,7 @@ const updateWorkingProjectNumberForMembers = async (
     await Promise.all(promises);
   }
 
+  // get the added users to increase the working project number for them
   const addMembersIds = ProjectService.getAddedIds(
     prevWorkingIds,
     newWorkingIds

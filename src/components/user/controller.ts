@@ -29,8 +29,10 @@ const registerClient: RequestHandler = async (req, res) => {
       data: { company },
     });
 
+    // encrypt the password
     const { content, iv } = await UserService.encrypt(password);
 
+    // create a user
     await db.user.create({
       data: {
         email,
@@ -78,6 +80,7 @@ const login: RequestHandler = async (req, res) => {
     if (!isValidCred)
       return res.status(401).send(appResponse('Invalid Credentials.', false));
 
+    // generate token to the authenticated user.
     const token = UserService.generateAuthToken({
       email: user.email,
       fullName: `${user.firstName} ${user.lastName}`,
@@ -112,6 +115,8 @@ const getAllUsers: RequestHandler = async (req, res) => {
         role: { not: Roles.SUPER_ADMIN },
       },
     });
+
+    // find user that is not super admin
     const users = await db.user.findMany({
       skip: updatedSkip,
       take: updatedTake,
@@ -123,6 +128,7 @@ const getAllUsers: RequestHandler = async (req, res) => {
       },
     });
 
+    // build the dtos
     const updatedUsers = users.map((u) => mapUserToDTO(u));
 
     res.send({ users: updatedUsers, totalCount: usersCount });
@@ -159,6 +165,7 @@ const inviteUser: RequestHandler = async (req, res) => {
       data: { company },
     });
 
+    // encrypt password
     const { content, iv } = await UserService.encrypt(password);
 
     const createdUser = await db.user.create({
@@ -230,6 +237,7 @@ const getClientsProjects: RequestHandler = async (req, res) => {
 
     const { id } = req.params;
 
+    // get all projects for this client
     const projects = await Project.find({ userId: id });
     const payloadProjects = projects.map((p) => p.toJSON());
 
@@ -249,6 +257,7 @@ const getAdminProjects: RequestHandler = async (req, res) => {
 
     const { id } = req.user;
 
+    // get all project that is assigned for this admin and not finished yet
     const projects = await Project.find({ adminId: id, finished: false });
     const payloadProjects = projects.map((p) => p.toJSON());
 
@@ -269,11 +278,13 @@ const getQAProjects: RequestHandler = async (req, res) => {
     const { id } = req.user;
     const countsArr = [];
 
+    // get projects that the qa is assigned in project
     const projects = await Project.find({ assignedQAs: id, finished: false });
     const payloadProjects = projects.map((p) => p.toJSON());
 
     for (let i = 0; i < payloadProjects.length; i++) {
       const p = payloadProjects[i];
+      // get counts for qa statics
       const counts = await ImageService.getQAStatics(p._id as any, id);
       countsArr.push({ ...counts, projectId: p._id });
     }
@@ -299,10 +310,12 @@ const getAnnotatorProjects: RequestHandler = async (req, res) => {
       assignedAnnotators: id,
       finished: false,
     });
+
     const payloadProjects = projects.map((p) => p.toJSON());
 
     for (let i = 0; i < payloadProjects.length; i++) {
       const p = payloadProjects[i];
+      // get counts for annotator
       const counts = await ImageService.getAnnotatorStatics(p._id as any, id);
       countsArr.push({ ...counts, projectId: p._id });
     }
@@ -320,6 +333,7 @@ const getAnnotatorProjects: RequestHandler = async (req, res) => {
 const getClients: RequestHandler = async (req, res) => {
   try {
     const users = await getUsersByRole(Roles.CLIENT);
+    // get clients
     const updatedUsers = users.map((u) => mapUserToDTO(u));
     res.send({ clients: updatedUsers });
   } catch (error) {
@@ -329,6 +343,7 @@ const getClients: RequestHandler = async (req, res) => {
   }
 };
 
+// get all admins
 const getAdmins: RequestHandler = async (req, res) => {
   try {
     const admins = await getUsersByRole(Roles.ADMIN);
@@ -341,6 +356,7 @@ const getAdmins: RequestHandler = async (req, res) => {
   }
 };
 
+// get all qas
 const getQAs: RequestHandler = async (req, res) => {
   try {
     const qas = await getUsersByRole(Roles.QA);
@@ -353,6 +369,7 @@ const getQAs: RequestHandler = async (req, res) => {
   }
 };
 
+// get all annotators
 const getAnnotators: RequestHandler = async (req, res) => {
   try {
     const annotators = await getUsersByRole(Roles.ANNOTATOR);
@@ -367,6 +384,7 @@ const getAnnotators: RequestHandler = async (req, res) => {
 
 // ------------------ PRIVATE METHODS ---------------
 
+// methods that return all users with a specific role
 const getUsersByRole = async (role: keyof typeof Roles) => {
   return await db.user.findMany({
     include: {
@@ -379,6 +397,7 @@ const getUsersByRole = async (role: keyof typeof Roles) => {
   });
 };
 
+// build the dto object
 const mapUserToDTO = (
   user: User & {
     clientInfo?: ClientInfo | null;
