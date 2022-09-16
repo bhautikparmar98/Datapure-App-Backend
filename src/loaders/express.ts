@@ -6,7 +6,7 @@ import { ApiRoutes } from '../api';
 import config from '../config';
 
 export default ({ app }: { app: express.Application }): void => {
-  //load cors
+  //load cors and only allow cors for the provided url in the config.
   app.use(
     cors({
       credentials: true,
@@ -20,6 +20,7 @@ export default ({ app }: { app: express.Application }): void => {
   // Load API routes
   app.use(config.api.prefix, ApiRoutes());
 
+  // create a health check end point to check the working of APIs.
   app.use('/', (req, res) => {
     res.status(200).json({ live: true });
   });

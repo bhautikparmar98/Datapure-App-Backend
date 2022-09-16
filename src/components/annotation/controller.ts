@@ -1,10 +1,6 @@
 import { RequestHandler } from 'express';
-import { ImageStatus } from '../../constants';
 import logger from '../../loaders/logger';
-
 import { appResponse } from '../../utils';
-import ProjectService from '../project/service';
-import { Annotation } from './model';
 
 // only client will use this method to create a new register
 const signUrl: RequestHandler = async (req, res) => {

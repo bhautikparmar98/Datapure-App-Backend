@@ -1,6 +1,7 @@
 import mongoose, { Model, Schema } from 'mongoose';
 import { IImageComment } from './types';
 
+// image comment schema for mongoose ORM
 const ImageCommentSchema = new Schema<IImageComment>(
   {
     userId: {
@@ -29,6 +30,7 @@ const ImageCommentSchema = new Schema<IImageComment>(
   }
 );
 
+// create the model with that schema and export it
 export const ImageComment: Model<IImageComment> = mongoose.model(
   'ImageComment',
   ImageCommentSchema

@@ -9,13 +9,17 @@ import ImageCommentService from './service';
 const deleteImageComment: RequestHandler = async (req, res) => {
   try {
     const user = req.user;
+    // get the id of comments from params
     const { id } = req.params;
 
+    // finding comment with this id
     const comment = await ImageComment.findById(id);
 
+    // if not comment return bad request
     if (!comment)
       return res.status(400).send(appResponse('Invalid comment id', false));
 
+    // only user that create the comment can remove it otherwise return bad request
     if (comment.userId !== user.id)
       return res
         .status(400)
@@ -26,6 +30,7 @@ const deleteImageComment: RequestHandler = async (req, res) => {
           )
         );
 
+    // delete comment from database
     await comment.delete();
 
     res.status(200).send({ success: true });
