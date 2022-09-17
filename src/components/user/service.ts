@@ -19,11 +19,13 @@ interface AuthToken {
 const algorithm = 'aes-256-ctr';
 const secretKey = config.encryptSecret;
 
+// generate hashed password
 const getHashedPassword = async (password: string): Promise<string> => {
   const hashedPassword = await bcrypt.hash(password, 8);
   return hashedPassword;
 };
 
+// generate auth token
 const generateAuthToken = (payload: AuthToken): string => {
   const token = jwt.sign(payload, config.jwtSecret, {
     expiresIn: '1d',
@@ -32,6 +34,7 @@ const generateAuthToken = (payload: AuthToken): string => {
   return token;
 };
 
+// verify the password
 const verifyPassword = async (
   hash: { content: string; iv: string },
   password: string
@@ -40,10 +43,10 @@ const verifyPassword = async (
   return originalPassword === password;
 };
 
+// encrypt the password
 const encrypt = (text: string) => {
+  // create the iv
   const iv = crypto.randomBytes(16);
-
-  console.log('secretKey', secretKey);
 
   const cipher = crypto.createCipheriv(algorithm, secretKey, iv);
 
@@ -55,6 +58,7 @@ const encrypt = (text: string) => {
   };
 };
 
+// decrypt the the password
 const decrypt = (hash: { iv: string; content: string }) => {
   const decipher = crypto.createDecipheriv(
     algorithm,
@@ -77,6 +81,7 @@ const generateRandomPassword = (): string => {
   });
 };
 
+// send invitation email
 const sendInvitationMail = async (user: User, password: string) => {
   const fromEmail = config.gmailEmail;
   const fromName = 'DataPureTech';
@@ -104,6 +109,7 @@ const sendInvitationMail = async (user: User, password: string) => {
     <p><strong>DataPure</strong> Tech team</p>
   `;
 
+  // send the email
   const info = await MailService.send(
     fromName,
     fromEmail,
@@ -114,21 +120,25 @@ const sendInvitationMail = async (user: User, password: string) => {
   );
 };
 
+// check if the user is admin
 const isAdmin = async (userId: number): Promise<boolean> => {
   const admin = await db.user.findFirst({ where: { id: userId } });
   return admin !== undefined && admin?.role === Roles.ADMIN;
 };
 
+// check if the user is annotator
 const isAnnotator = async (userId: number): Promise<boolean> => {
   const annotator = await db.user.findFirst({ where: { id: userId } });
   return annotator !== undefined && annotator?.role === Roles.ANNOTATOR;
 };
 
+// check if the user is qa
 const isQA = async (userId: number): Promise<boolean> => {
   const annotator = await db.user.findFirst({ where: { id: userId } });
   return annotator !== undefined && annotator?.role === Roles.QA;
 };
 
+// increment the number of the working projects
 const incrementNumberOfWorkingProjects = async (adminId: number) => {
   await db.user.update({
     where: { id: adminId },
@@ -136,6 +146,7 @@ const incrementNumberOfWorkingProjects = async (adminId: number) => {
   });
 };
 
+// decrement the number of the working projects
 const decrementNumberOfWorkingProjects = async (adminId: number) => {
   await db.user.update({
     where: { id: adminId },

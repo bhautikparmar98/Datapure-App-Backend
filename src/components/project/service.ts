@@ -4,24 +4,29 @@ import path from 'path';
 import mkdirp from 'mkdirp';
 import { ProjectClass } from './types';
 
+// get removed ids that exist in prevIds and remove from newIds
 const getRemovedIds = (prevIds: number[], newIds: number[]): number[] => {
   return prevIds.filter((prevId) => !newIds.includes(prevId));
 };
 
+// get the added ids that exist on newIds and does not exist in prevIds
 const getAddedIds = (prevIds: number[], newIds: number[]): number[] => {
   return newIds.filter((newId) => !prevIds.includes(newId));
 };
 
+// get QA ids
 const getQAsIds = async (projectId: string) => {
   const project = await Project.findById(projectId);
   return project?.assignedQAs;
 };
 
+// get the owner id for the project
 const getOwnerId = async (projectId: string) => {
   const project = await Project.findById(projectId);
   return project?.userId;
 };
 
+// update count for the project
 const updateCount = async (
   projectId: string,
   counts: {
@@ -39,15 +44,18 @@ const updateCount = async (
     if (!data[k]) delete data[k];
   });
 
+  // find the project id and update the counts
   await Project.findByIdAndUpdate(projectId, { $inc: { ...data } });
 };
 
+// add classes for a project
 const addClasses = async (projectId: string, classes: ProjectClass[]) => {
   await Project.findByIdAndUpdate(projectId, {
     $push: { classes: { $each: classes } },
   });
 };
 
+// create the output file
 const createOutputFile = async (
   projectName: string,
   content: string
@@ -58,6 +66,7 @@ const createOutputFile = async (
     now.getFullYear() + ' ' + (now.getMonth() + 1) + ' ' + now.getDate();
   const time = now.getHours() + ' ' + now.getMinutes() + ' ' + now.getSeconds();
 
+  // create a file name for the project
   const filename = `${projectName} ${date} ${time}.json`;
   let absPath = path.join(path.resolve('./'), '/temp_files/', filename);
   let relPath = path.join('./temp_files', filename); // path relative to server root
