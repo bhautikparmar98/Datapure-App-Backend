@@ -43,6 +43,7 @@ const AnnotationSchema = new Schema<IAnnotation>(
       default: true,
     },
     shapes: [ShapeSchema],
+    attributes: Object,
   },
   {
     timestamps: true,

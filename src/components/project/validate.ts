@@ -63,6 +63,7 @@ export const CreatePreAnnotatedProjectSchema = Joi.object({
               id: Joi.any(),
               type: Joi.string().required(),
               classId: Joi.any().required(),
+              attributes: Joi.any(),
             })
           )
           .required(),

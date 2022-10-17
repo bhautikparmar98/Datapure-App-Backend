@@ -7,6 +7,7 @@ import mongoose, { ObjectId } from 'mongoose';
 import { Image } from './model';
 import { ImageStatus } from '../../constants';
 import AnnotationService from '../annotation/service';
+import { Project } from '../project/model';
 
 // get the s3 region
 const region = config.aws.s3.region;
@@ -140,7 +141,54 @@ const createImagesWithAnnotations = async (
   // loop through the images to create it's annotations
   for (let i = 0; i < results.length; i++) {
     const id = results[i]._id.toString();
-    const imageAnnotations = images[i]?.annotations;
+    let imageAnnotations = images[i]?.annotations;
+
+    const attributesList = [
+      ...new Set(
+        imageAnnotations
+          .map(({ attributes = false }) => {
+            if (attributes) {
+              return Object.keys(attributes);
+            }
+            return null;
+          })
+          .filter((n = false) => n)
+          .flat()
+      ),
+    ];
+
+    imageAnnotations = imageAnnotations.map((e: any) => {
+      if (e?.attributes) {
+        attributesList.forEach((att: any) => {
+          if (!Object.keys(e.attributes).includes(att)) {
+            e.attributes[att] = '';
+          }
+        });
+      }
+      return e;
+    });
+
+    const attributesForProjects = attributesList.map((e: any) => {
+      const data = {
+        displayName: '',
+        classes: '',
+        maxCharacters: 0,
+        defaultValue: '',
+        descriptions: '',
+        required: false,
+        metaname: e,
+        metatype: 'text',
+      };
+      return data;
+    });
+    await Project.updateOne(
+      { _id: projectId },
+      {
+        $set: {
+          attributes: attributesForProjects,
+        },
+      }
+    );
 
     if (imageAnnotations && imageAnnotations.length) {
       // create annotations with the image id and get the generated ids for annotations

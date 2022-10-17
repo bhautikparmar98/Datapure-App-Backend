@@ -10,6 +10,7 @@ import UserService from '../user/service';
 import { Project } from './model';
 import ProjectService from './service';
 import { generateAuthToken } from '../../utils/jwt';
+import { Annotation } from '../annotation/model';
 
 // only client will use this method to create a new register
 const createProject: RequestHandler = async (req, res) => {
@@ -501,6 +502,59 @@ const assignAnnotatorsToProject: RequestHandler = async (req, res) => {
   }
 };
 
+const addMetaDataToProject: RequestHandler = async (req, res) => {
+  try {
+    // const user = req.user;
+    const { id } = req.params;
+
+    // const permission = ac.can(user.role).readOwn(Resources.PROJECT);
+    // if (!permission.granted)
+    //   return res.status(403).send(appResponse('You are not allowed', false));
+
+    const project = await Project.findById(id as string);
+
+    if (!project)
+      return res.status(400).send(appResponse('Invalid project id', false));
+
+    // make sure that the user is the admin that assigned to this project
+
+    // if (project.adminId !== user.id)
+    //   return res.status(403).send(appResponse('You are not allowed', false));
+    console.log('hello');
+    // update assigned annotators
+    project.attributes = [...project.attributes, req.body];
+
+    const classesIdArray = project.classes.map((e) => e._id.toString());
+    // await Annotation.updateMany(
+    //   { classId: { $in: classesIdArray } },
+    //   {
+    //     $unset: {
+    //       metadata: 1
+    //     },
+    //   }
+    // );
+
+    await Annotation.updateMany(
+      { classId: { $in: classesIdArray } },
+      {
+        $set: {
+          [`attributes.${req.body.metaname}`]: req.body.defaultValue || '',
+        },
+      }
+    );
+
+    // save the project
+    await project.save();
+
+    res.status(200).send({ success: true });
+  } catch (error) {
+    logger.error(error);
+    res
+      .status(500)
+      .send(appResponse('Error,in adding meta-properties in project', false));
+  }
+};
+
 const getAnnotatorImagesForProject: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
@@ -704,6 +758,7 @@ const downloadOutputFile: RequestHandler = async (req, res) => {
 
 export {
   createProject,
+  addMetaDataToProject,
   CreateProjectForHUmanInLoop,
   getProjectImages,
   addImages,
