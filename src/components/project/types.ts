@@ -26,6 +26,8 @@ export interface IProject {
   assignedQAs: number[];
 
   finished: boolean;
+
+  sdkToken?: string;
 }
 
 export interface ProjectClass {

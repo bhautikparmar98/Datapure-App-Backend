@@ -9,6 +9,7 @@ import ImageService from '../image/service';
 import UserService from '../user/service';
 import { Project } from './model';
 import ProjectService from './service';
+import { generateAuthToken } from '../../utils/jwt';
 
 // only client will use this method to create a new register
 const createProject: RequestHandler = async (req, res) => {
@@ -65,6 +66,66 @@ const createProject: RequestHandler = async (req, res) => {
   }
 };
 
+const CreateProjectForHUmanInLoop: RequestHandler = async (req, res) => {
+  try {
+    const permission = ac.can(req.user.role).createOwn('project');
+    if (!permission.granted)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    const { name, dueAt, classes, dataType } = req.body;
+
+    const project = new Project({
+      name,
+      dueAt,
+      type: dataType, //set type as HUMAN_IN_LOOP
+      classes,
+      imagesIds: [],
+      userId: req.user.id,
+      finished: false,
+      imagesCount: 0,
+      annotationCount: 0,
+      annotationInProgressCount: 0,
+      clientReviewCount: 0,
+      doneCount: 0,
+      qaCount: 0,
+      redoCount: 0,
+
+      assignedAnnotators: [],
+      assignedQAs: [],
+    });
+
+    const user = req.user;
+
+    // generate sdk token
+    const sdkToken = generateAuthToken({
+      payload: {
+        email: user.email,
+        fullName: user.fullName,
+        id: user.id,
+        role: user.role,
+        projectId: project._id.toString(),
+      },
+    });
+    project.sdkToken = sdkToken;
+
+    // save to get the project id
+    await project.save();
+
+    project.imagesCount = 0;
+    project.annotationCount = 0;
+
+    // save again after updating the counts
+    await project.save();
+
+    res.status(201).send({ project: project.toJSON() });
+  } catch (err) {
+    logger.error(err);
+
+    const response = appResponse('Error creating a project.', false);
+    res.status(500).send(response);
+  }
+};
+
 const getProject: RequestHandler = async (req, res) => {
   const user = req.user;
   const { id } = req.params;
@@ -87,6 +148,33 @@ const getProject: RequestHandler = async (req, res) => {
     logger.error(err);
 
     const response = appResponse('Error get one project.', false);
+    res.status(500).send(response);
+  }
+};
+
+// used for SDK
+const getProjectId: RequestHandler = async (req, res) => {
+  try {
+    const user = req.user;
+    const sdkToken = req.header('x-access-token')?.replace('bearer ', '');
+    if (!sdkToken) throw new Error('SDK Token is required');
+    const project = await Project.findOne({
+      sdkToken,
+    });
+
+    if (!project)
+      return res.status(400).send(appResponse('Invalid project id', false));
+
+    if (user.role !== Roles.CLIENT || user.id !== project.userId)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    let response = appResponse('Found project id', true, {
+      projectId: project._id,
+    });
+    return res.send(response);
+  } catch (err) {
+    logger.error(err);
+    const response = appResponse('Error with getting project id.', false);
     res.status(500).send(response);
   }
 };
@@ -616,6 +704,7 @@ const downloadOutputFile: RequestHandler = async (req, res) => {
 
 export {
   createProject,
+  CreateProjectForHUmanInLoop,
   getProjectImages,
   addImages,
   assignAdminToProject,
@@ -627,6 +716,7 @@ export {
   getClientImagesForProject,
   createPreAnnotatedProject,
   getProject,
+  getProjectId,
   addClasses,
   removeImages,
 };

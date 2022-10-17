@@ -25,6 +25,23 @@ export const CreateProject = Joi.object({
     .required(),
 });
 
+// `dataType` is for Human in loop & no `images` required
+export const CreateProjectForHUmanInLoopSchema = Joi.object({
+  name: Joi.string().min(2).max(50).required(),
+  dueAt: Joi.date().required(),
+  type: Joi.string().valid(AnnotationTypes.IMAGE_ANNOTATION).required(),
+  dataType: Joi.string().valid(AnnotationTypes.HUMAN_IN_LOOP),
+
+  classes: Joi.array()
+    .items(
+      Joi.object({
+        name: Joi.string().min(2).max(50).required(),
+        color: Joi.string().min(2).max(50).required(),
+      })
+    )
+    .required(),
+});
+
 export const CreatePreAnnotatedProjectSchema = Joi.object({
   name: Joi.string().min(2).max(50).required(),
   dueAt: Joi.date().required(),

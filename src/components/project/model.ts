@@ -72,6 +72,8 @@ const ProjectSchema = new Schema<IProject>(
 
     assignedAnnotators: [{ type: Number }],
     assignedQAs: [{ type: Number }],
+
+    sdkToken: String,
   },
   { timestamps: true }
 );
