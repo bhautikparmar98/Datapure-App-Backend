@@ -730,6 +730,7 @@ const downloadOutputFile: RequestHandler = async (req, res) => {
               type: s.type,
               id: s._id?.toString(),
             })),
+            attributes: anno?.attributes,
           };
         }),
       };
