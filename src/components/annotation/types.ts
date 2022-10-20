@@ -17,4 +17,5 @@ export interface IAnnotation {
   imageId: ObjectId;
   visible: boolean;
   shapes: IInstance[];
+  attributes: any;
 }

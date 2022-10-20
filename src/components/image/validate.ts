@@ -29,6 +29,7 @@ const AddAnnotationSchema = Joi.object({
             stroke: Joi.any(),
           })
         ),
+        attributes: Joi.any(),
       })
     )
     .required(),

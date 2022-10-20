@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
-import UserRouter from '../components/user/router';
 import OCRRouter from '../components/ocr/router';
+import UserRouter from '../components/user/router';
 import ImageRouter from '../components/image/router';
 import ProjectRouter from '../components/project/router';
 import ImageCommentRouter from '../components/comments/router';

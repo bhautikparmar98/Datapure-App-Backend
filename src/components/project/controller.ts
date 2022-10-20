@@ -1,24 +1,25 @@
-import { RequestHandler } from 'express';
-import logger from '../../loaders/logger';
+import { RequestHandler } from "express";
+import logger from "../../loaders/logger";
 
-import { ImageStatus, Resources, Roles } from '../../constants';
-import { appResponse } from '../../utils';
-import ac from '../../utils/accesscontrol';
-import { IAnnotation } from '../annotation/types';
-import ImageService from '../image/service';
-import UserService from '../user/service';
-import { Project } from './model';
-import ProjectService from './service';
-import { generateAuthToken } from '../../utils/jwt';
-import AnnotationService from '../annotation/service';
-import { Image } from '../image/model';
+import { ImageStatus, Resources, Roles } from "../../constants";
+import { appResponse } from "../../utils";
+import ac from "../../utils/accesscontrol";
+import { IAnnotation } from "../annotation/types";
+import ImageService from "../image/service";
+import UserService from "../user/service";
+import { Project } from "./model";
+import ProjectService from "./service";
+import { generateAuthToken } from "../../utils/jwt";
+import AnnotationService from "../annotation/service";
+import { Image } from "../image/model";
+import { Annotation } from "../annotation/model";
 
 // only client will use this method to create a new register
 const createProject: RequestHandler = async (req, res) => {
   try {
-    const permission = ac.can(req.user.role).createOwn('project');
+    const permission = ac.can(req.user.role).createOwn("project");
     if (!permission.granted)
-      return res.status(403).send(appResponse('You are not allowed', false));
+      return res.status(403).send(appResponse("You are not allowed", false));
 
     const { name, dueAt, type, classes, images } = req.body;
 
@@ -63,16 +64,16 @@ const createProject: RequestHandler = async (req, res) => {
   } catch (err) {
     logger.error(err);
 
-    const response = appResponse('Error creating a project.', false);
+    const response = appResponse("Error creating a project.", false);
     res.status(500).send(response);
   }
 };
 
 const CreateProjectForHUmanInLoop: RequestHandler = async (req, res) => {
   try {
-    const permission = ac.can(req.user.role).createOwn('project');
+    const permission = ac.can(req.user.role).createOwn("project");
     if (!permission.granted)
-      return res.status(403).send(appResponse('You are not allowed', false));
+      return res.status(403).send(appResponse("You are not allowed", false));
 
     const { name, dueAt, classes, dataType } = req.body;
 
@@ -123,7 +124,7 @@ const CreateProjectForHUmanInLoop: RequestHandler = async (req, res) => {
   } catch (err) {
     logger.error(err);
 
-    const response = appResponse('Error creating a project.', false);
+    const response = appResponse("Error creating a project.", false);
     res.status(500).send(response);
   }
 };
@@ -135,21 +136,21 @@ const getProject: RequestHandler = async (req, res) => {
     const project = await Project.findById(id as string);
 
     if (!project)
-      return res.status(400).send(appResponse('Invalid project id', false));
+      return res.status(400).send(appResponse("Invalid project id", false));
 
     // to get the project as a client you should own the project
     if (user.role === Roles.CLIENT && user.id !== project.userId)
-      return res.status(403).send(appResponse('You are not allowed', false));
+      return res.status(403).send(appResponse("You are not allowed", false));
     // to get the project as an admin you should assigned to this project through super admin
     if (user.role === Roles.ADMIN && user.id !== project.adminId)
-      return res.status(403).send(appResponse('You are not allowed', false));
+      return res.status(403).send(appResponse("You are not allowed", false));
 
     // return project
     return res.status(200).send({ project: project.toJSON() });
   } catch (err) {
     logger.error(err);
 
-    const response = appResponse('Error get one project.', false);
+    const response = appResponse("Error get one project.", false);
     res.status(500).send(response);
   }
 };
@@ -158,25 +159,25 @@ const getProject: RequestHandler = async (req, res) => {
 const getProjectId: RequestHandler = async (req, res) => {
   try {
     const user = req.user;
-    const sdkToken = req.header('x-access-token')?.replace('bearer ', '');
-    if (!sdkToken) throw new Error('SDK Token is required');
+    const sdkToken = req.header("x-access-token")?.replace("bearer ", "");
+    if (!sdkToken) throw new Error("SDK Token is required");
     const project = await Project.findOne({
       sdkToken,
     });
 
     if (!project)
-      return res.status(400).send(appResponse('Invalid project id', false));
+      return res.status(400).send(appResponse("Invalid project id", false));
 
     if (user.role !== Roles.CLIENT || user.id !== project.userId)
-      return res.status(403).send(appResponse('You are not allowed', false));
+      return res.status(403).send(appResponse("You are not allowed", false));
 
-    let response = appResponse('Found project id', true, {
+    let response = appResponse("Found project id", true, {
       projectId: project._id,
     });
     return res.send(response);
   } catch (err) {
     logger.error(err);
-    const response = appResponse('Error with getting project id.', false);
+    const response = appResponse("Error with getting project id.", false);
     res.status(500).send(response);
   }
 };
@@ -191,14 +192,14 @@ const addClasses: RequestHandler = async (req, res) => {
     const project = await Project.findById(id as string);
 
     if (!project)
-      return res.status(400).send(appResponse('Invalid project id', false));
+      return res.status(400).send(appResponse("Invalid project id", false));
 
     // to add classes to the project as a client you should own the project
     if (user.role === Roles.CLIENT && user.id !== project.userId)
-      return res.status(403).send(appResponse('You are not allowed', false));
+      return res.status(403).send(appResponse("You are not allowed", false));
     // to add classes to the project as an admin you should assigned to this project through super admin
     if (user.role === Roles.ADMIN && user.id !== project.adminId)
-      return res.status(403).send(appResponse('You are not allowed', false));
+      return res.status(403).send(appResponse("You are not allowed", false));
 
     // add classes to the project
     await ProjectService.addClasses(id, classes);
@@ -207,7 +208,7 @@ const addClasses: RequestHandler = async (req, res) => {
   } catch (err) {
     logger.error(err);
 
-    const response = appResponse('Error adding classes to project.', false);
+    const response = appResponse("Error adding classes to project.", false);
     res.status(500).send(response);
   }
 };
@@ -222,12 +223,12 @@ const removeImages: RequestHandler = async (req, res) => {
     const project = await Project.findById(id as string);
 
     if (!project)
-      return res.status(400).send(appResponse('Invalid project id', false));
+      return res.status(400).send(appResponse("Invalid project id", false));
 
     if (user.role === Roles.CLIENT && user.id !== project.userId)
-      return res.status(403).send(appResponse('You are not allowed', false));
+      return res.status(403).send(appResponse("You are not allowed", false));
     if (user.role === Roles.ADMIN && user.id !== project.adminId)
-      return res.status(403).send(appResponse('You are not allowed', false));
+      return res.status(403).send(appResponse("You are not allowed", false));
 
     // call remove images from project
     await ImageService.removeImages(id, imageIds);
@@ -236,7 +237,7 @@ const removeImages: RequestHandler = async (req, res) => {
   } catch (err) {
     logger.error(err);
 
-    const response = appResponse('Error removing images from project.', false);
+    const response = appResponse("Error removing images from project.", false);
     res.status(500).send(response);
   }
 };
@@ -244,9 +245,9 @@ const removeImages: RequestHandler = async (req, res) => {
 // create a pre-annotated project
 const createPreAnnotatedProject: RequestHandler = async (req, res) => {
   try {
-    const permission = ac.can(req.user.role).createOwn('project');
+    const permission = ac.can(req.user.role).createOwn("project");
     if (!permission.granted)
-      return res.status(403).send(appResponse('You are not allowed', false));
+      return res.status(403).send(appResponse("You are not allowed", false));
 
     const { name, dueAt, type, classes, images, annotationType, dataType } =
       req.body;
@@ -258,7 +259,7 @@ const createPreAnnotatedProject: RequestHandler = async (req, res) => {
     ) {
       return res
         .status(400)
-        .send(appResponse('Invalid annotation type', false));
+        .send(appResponse("Invalid annotation type", false));
     }
 
     // create the project
@@ -314,7 +315,7 @@ const createPreAnnotatedProject: RequestHandler = async (req, res) => {
   } catch (err) {
     logger.error(err);
 
-    const response = appResponse('Error creating a project.', false);
+    const response = appResponse("Error creating a project.", false);
     res.status(500).send(response);
   }
 };
@@ -324,19 +325,19 @@ const addImages: RequestHandler = async (req, res) => {
     const { id } = req.params;
     const { images, imgsStatus = ImageStatus.PENDING_ANNOTATION } = req.body;
 
-    const permission = ac.can(req.user.role).createOwn('image');
+    const permission = ac.can(req.user.role).createOwn("image");
     if (!permission.granted)
-      return res.status(403).send(appResponse('You are not allowed', false));
+      return res.status(403).send(appResponse("You are not allowed", false));
 
     const project = await Project.findById(id as string);
 
     if (!project)
-      return res.status(400).send(appResponse('Invalid project id', false));
+      return res.status(400).send(appResponse("Invalid project id", false));
 
     // create images
     const imagesIds = await ImageService.createImages(
       images as { url: string; fileName: string }[],
-      project._id.toString() as any, 
+      project._id.toString() as any,
       imgsStatus
     );
 
@@ -363,26 +364,28 @@ const addImages: RequestHandler = async (req, res) => {
 
     // const imagesIdOfProject = project.imagesIds.map((id) => id.toString());
 
-    await Promise.all(images.map(async (image: any) => {
-      const i = newImages.find((data) => data.src === image.url);
-      if (i) {
-        const annotationsIds = await AnnotationService.createPreAnnotations(
-          image.annotations,
-          i._id.toString(),
-          enhancedClasses
-        );
-        console.log(annotationsIds);
-        return Image.findByIdAndUpdate(i._id, {
-          $set: { annotationIds: [...annotationsIds] },
-        })
-          .then((res) => {
-            console.log(res);
+    await Promise.all(
+      images.map(async (image: any) => {
+        const i = newImages.find((data) => data.src === image.url);
+        if (i) {
+          const annotationsIds = await AnnotationService.createPreAnnotations(
+            image.annotations,
+            i._id.toString(),
+            enhancedClasses
+          );
+          console.log(annotationsIds);
+          return Image.findByIdAndUpdate(i._id, {
+            $set: { annotationIds: [...annotationsIds] },
           })
-          .catch((er) => {
-            console.log(er);
-          });
-      }
-    }))
+            .then((res) => {
+              console.log(res);
+            })
+            .catch((er) => {
+              console.log(er);
+            });
+        }
+      })
+    );
 
     // update the annotators with the new images
     // we don't wait for it's completion
@@ -397,22 +400,22 @@ const addImages: RequestHandler = async (req, res) => {
     logger.error(error);
     res
       .status(500)
-      .send(appResponse('Error adding new images for project', false));
+      .send(appResponse("Error adding new images for project", false));
   }
 };
 
 const getProjectImages: RequestHandler = async (req, res) => {
   try {
-    const permission = ac.can(req.user.role).readOwn('image');
+    const permission = ac.can(req.user.role).readOwn("image");
     if (!permission.granted)
-      return res.status(403).send(appResponse('You are not allowed', false));
+      return res.status(403).send(appResponse("You are not allowed", false));
 
     const { id } = req.params;
 
     const project = await Project.findById(id as string);
 
     if (!project)
-      return res.status(400).send(appResponse('Invalid project id', false));
+      return res.status(400).send(appResponse("Invalid project id", false));
 
     // get project images by project id
     const images = await ImageService.getProjectImages(id);
@@ -420,7 +423,7 @@ const getProjectImages: RequestHandler = async (req, res) => {
     res.status(200).send({ images });
   } catch (error) {
     logger.error(error);
-    res.status(500).send(appResponse('Error getting project images', false));
+    res.status(500).send(appResponse("Error getting project images", false));
   }
 };
 
@@ -433,12 +436,12 @@ const assignAdminToProject: RequestHandler = async (req, res) => {
     const isAdmin = await UserService.isAdmin(+adminId);
 
     if (!isAdmin)
-      return res.status(400).send(appResponse('Invalid admin id', false));
+      return res.status(400).send(appResponse("Invalid admin id", false));
 
     const project = await Project.findById(id as string);
 
     if (!project)
-      return res.status(400).send(appResponse('Invalid project id', false));
+      return res.status(400).send(appResponse("Invalid project id", false));
 
     // if the project already have an admin id we should decrement the number of working projects for the prev admin
     if (project.adminId)
@@ -455,7 +458,7 @@ const assignAdminToProject: RequestHandler = async (req, res) => {
     res.status(200).send({ success: true });
   } catch (error) {
     logger.error(error);
-    res.status(500).send(appResponse('Error assign admin to project', false));
+    res.status(500).send(appResponse("Error assign admin to project", false));
   }
 };
 
@@ -467,16 +470,16 @@ const assignQAsToProject: RequestHandler = async (req, res) => {
 
     const permission = ac.can(user.role).readOwn(Resources.PROJECT);
     if (!permission.granted)
-      return res.status(403).send(appResponse('You are not allowed', false));
+      return res.status(403).send(appResponse("You are not allowed", false));
 
     const project = await Project.findById(id as string);
 
     if (!project)
-      return res.status(400).send(appResponse('Invalid project id', false));
+      return res.status(400).send(appResponse("Invalid project id", false));
 
     // make sure that the user is the admin that assigned to this project
     if (project.adminId !== user.id)
-      return res.status(403).send(appResponse('You are not allowed', false));
+      return res.status(403).send(appResponse("You are not allowed", false));
 
     // update number of working project for members
     await updateWorkingProjectNumberForMembers(project.assignedQAs, qaIds);
@@ -490,7 +493,7 @@ const assignQAsToProject: RequestHandler = async (req, res) => {
     res.status(200).send({ success: true });
   } catch (error) {
     logger.error(error);
-    res.status(500).send(appResponse('Error assign qas to project', false));
+    res.status(500).send(appResponse("Error assign qas to project", false));
   }
 };
 
@@ -502,17 +505,17 @@ const assignAnnotatorsToProject: RequestHandler = async (req, res) => {
 
     const permission = ac.can(user.role).readOwn(Resources.PROJECT);
     if (!permission.granted)
-      return res.status(403).send(appResponse('You are not allowed', false));
+      return res.status(403).send(appResponse("You are not allowed", false));
 
     const project = await Project.findById(id as string);
 
     if (!project)
-      return res.status(400).send(appResponse('Invalid project id', false));
+      return res.status(400).send(appResponse("Invalid project id", false));
 
     // make sure that the user is the admin that assigned to this project
 
     if (project.adminId !== user.id)
-      return res.status(403).send(appResponse('You are not allowed', false));
+      return res.status(403).send(appResponse("You are not allowed", false));
 
     // update number of working project for members
     await updateWorkingProjectNumberForMembers(
@@ -536,7 +539,60 @@ const assignAnnotatorsToProject: RequestHandler = async (req, res) => {
     res.status(200).send({ success: true });
   } catch (error) {
     logger.error(error);
-    res.status(500).send(appResponse('Error assign qas to project', false));
+    res.status(500).send(appResponse("Error assign qas to project", false));
+  }
+};
+
+const addMetaDataToProject: RequestHandler = async (req, res) => {
+  try {
+    // const user = req.user;
+    const { id } = req.params;
+
+    // const permission = ac.can(user.role).readOwn(Resources.PROJECT);
+    // if (!permission.granted)
+    //   return res.status(403).send(appResponse('You are not allowed', false));
+
+    const project = await Project.findById(id as string);
+
+    if (!project)
+      return res.status(400).send(appResponse("Invalid project id", false));
+
+    // make sure that the user is the admin that assigned to this project
+
+    // if (project.adminId !== user.id)
+    //   return res.status(403).send(appResponse('You are not allowed', false));
+    console.log("hello");
+    // update assigned annotators
+    project.attributes = [...project.attributes, req.body];
+
+    const classesIdArray = project.classes.map((e) => e._id.toString());
+    // await Annotation.updateMany(
+    //   { classId: { $in: classesIdArray } },
+    //   {
+    //     $unset: {
+    //       metadata: 1
+    //     },
+    //   }
+    // );
+
+    await Annotation.updateMany(
+      { classId: { $in: classesIdArray } },
+      {
+        $set: {
+          [`attributes.${req.body.metaname}`]: req.body.defaultValue || "",
+        },
+      }
+    );
+
+    // save the project
+    await project.save();
+
+    res.status(200).send({ success: true });
+  } catch (error) {
+    logger.error(error);
+    res
+      .status(500)
+      .send(appResponse("Error,in adding meta-properties in project", false));
   }
 };
 
@@ -550,23 +606,23 @@ const getAnnotatorImagesForProject: RequestHandler = async (req, res) => {
     const isAnnotator = await UserService.isAnnotator(userId);
 
     if (!isAnnotator)
-      return res.status(403).send(appResponse('You are not allowed.', false));
+      return res.status(403).send(appResponse("You are not allowed.", false));
 
     let images = [];
 
     // if redo = true we need to get the redo images for that annotator
-    if (redo === 'true')
+    if (redo === "true")
       images = await ImageService.getProjectRedoImageForAnnotator(
         id,
         userId,
-        parseInt(take?.toString() || '100')
+        parseInt(take?.toString() || "100")
       );
     // get the redo images for that annotator
     else
       images = await ImageService.getProjectImageForAnnotator(
         id,
         userId,
-        parseInt(take?.toString() || '100')
+        parseInt(take?.toString() || "100")
       );
 
     // build the images payload
@@ -581,7 +637,7 @@ const getAnnotatorImagesForProject: RequestHandler = async (req, res) => {
     res.status(200).send({ images: imagesPayload });
   } catch (err) {
     logger.error(err);
-    const response = appResponse('Error getting annotator images', false);
+    const response = appResponse("Error getting annotator images", false);
     res.status(500).send(response);
   }
 };
@@ -595,16 +651,16 @@ const getClientImagesForProject: RequestHandler = async (req, res) => {
     const project = await Project.findById(id as string);
 
     if (!project)
-      return res.status(400).send(appResponse('Invalid project id', false));
+      return res.status(400).send(appResponse("Invalid project id", false));
 
     // make sure that the client own the project
     if (project.userId !== userId)
-      return res.status(403).send(appResponse('You are not allowed', false));
+      return res.status(403).send(appResponse("You are not allowed", false));
 
     // get pending review images for that client
     const images = await ImageService.getProjectPendingReviewImageForClient(
       id,
-      parseInt(take?.toString() || '100')
+      parseInt(take?.toString() || "100")
     );
 
     // build the payload
@@ -620,7 +676,7 @@ const getClientImagesForProject: RequestHandler = async (req, res) => {
   } catch (err) {
     logger.error(err);
     const response = appResponse(
-      'Error getting pending review client images',
+      "Error getting pending review client images",
       false
     );
     res.status(500).send(response);
@@ -637,13 +693,13 @@ const getQAImagesForProject: RequestHandler = async (req, res) => {
     const isQA = await UserService.isQA(userId);
 
     if (!isQA)
-      return res.status(403).send(appResponse('You are not allowed.', false));
+      return res.status(403).send(appResponse("You are not allowed.", false));
 
     // get the images for that qa in this project
     const images = await ImageService.getProjectImageForQA(
       id,
       userId,
-      parseInt(take?.toString() || '100')
+      parseInt(take?.toString() || "100")
     );
 
     // build the payload
@@ -658,7 +714,7 @@ const getQAImagesForProject: RequestHandler = async (req, res) => {
     res.status(200).send({ images: imagesPayload });
   } catch (err) {
     logger.error(err);
-    const response = appResponse('Error getting qa images', false);
+    const response = appResponse("Error getting qa images", false);
     res.status(500).send(response);
   }
 };
@@ -671,18 +727,18 @@ const downloadOutputFile: RequestHandler = async (req, res) => {
 
     const project = await Project.findById(id as string);
 
-    console.log('I came here1 ');
+    console.log("I came here1 ");
 
     if (!project)
-      return res.status(400).send(appResponse('Invalid project id', false));
+      return res.status(400).send(appResponse("Invalid project id", false));
 
     // if he is an admin then he should assigned to this project
     if (user.role === Roles.ADMIN && user.id !== project.adminId)
-      return res.status(403).send(appResponse('You are not allowed.', false));
+      return res.status(403).send(appResponse("You are not allowed.", false));
 
     // if the role is client then he should own the project
     if (user.role === Roles.CLIENT && user.id !== project.userId)
-      return res.status(403).send(appResponse('You are not allowed.', false));
+      return res.status(403).send(appResponse("You are not allowed.", false));
 
     // get images with annotations with done and pending client review status
     const images = await ImageService.getProjectImagesWithAnnotations(id, [
@@ -715,6 +771,7 @@ const downloadOutputFile: RequestHandler = async (req, res) => {
               type: s.type,
               id: s._id?.toString(),
             })),
+            attributes: anno?.attributes,
           };
         }),
       };
@@ -728,7 +785,7 @@ const downloadOutputFile: RequestHandler = async (req, res) => {
     res.status(200).download(path, (error) => {
       if (error) {
         logger.error(error);
-        throw new Error('can not send the file');
+        throw new Error("can not send the file");
       }
 
       // delete the output file after download finished
@@ -736,13 +793,14 @@ const downloadOutputFile: RequestHandler = async (req, res) => {
     });
   } catch (error) {
     logger.error(error);
-    const response = appResponse('Error download output file', false);
+    const response = appResponse("Error download output file", false);
     res.status(500).send(response);
   }
 };
 
 export {
   createProject,
+  addMetaDataToProject,
   CreateProjectForHUmanInLoop,
   getProjectImages,
   addImages,
