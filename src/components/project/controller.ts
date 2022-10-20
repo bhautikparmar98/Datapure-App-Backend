@@ -10,6 +10,8 @@ import UserService from '../user/service';
 import { Project } from './model';
 import ProjectService from './service';
 import { generateAuthToken } from '../../utils/jwt';
+import AnnotationService from '../annotation/service';
+import { Image } from '../image/model';
 
 // only client will use this method to create a new register
 const createProject: RequestHandler = async (req, res) => {
@@ -246,7 +248,8 @@ const createPreAnnotatedProject: RequestHandler = async (req, res) => {
     if (!permission.granted)
       return res.status(403).send(appResponse('You are not allowed', false));
 
-    const { name, dueAt, type, classes, images, annotationType } = req.body;
+    const { name, dueAt, type, classes, images, annotationType, dataType } =
+      req.body;
 
     // the image status should be one of pending annotation or pending client review
     if (
@@ -262,7 +265,7 @@ const createPreAnnotatedProject: RequestHandler = async (req, res) => {
     const project = new Project({
       name,
       dueAt,
-      type,
+      type: dataType,
       classes,
       imagesIds: [],
       userId: req.user.id,
@@ -274,7 +277,6 @@ const createPreAnnotatedProject: RequestHandler = async (req, res) => {
       doneCount: 0,
       qaCount: 0,
       redoCount: 0,
-
       assignedAnnotators: [],
       assignedQAs: [],
     });
@@ -344,6 +346,42 @@ const addImages: RequestHandler = async (req, res) => {
 
     // save the project
     await project.save();
+
+    const classes = project.classes;
+
+    const enhancedClasses: any[] = [];
+    classes.forEach((element: any, index: number) => {
+      enhancedClasses.push({
+        ...element,
+        _id: project.classes[index]._id,
+        id: project.classes[index].id,
+      });
+    });
+
+    const newImages = await ImageService.getProjectImages(id);
+
+    // const imagesIdOfProject = project.imagesIds.map((id) => id.toString());
+
+    await Promise.all(images.map(async (image: any) => {
+      const i = newImages.find((data) => data.src === image.url);
+      if (i) {
+        const annotationsIds = await AnnotationService.createPreAnnotations(
+          image.annotations,
+          i._id.toString(),
+          enhancedClasses
+        );
+        console.log(annotationsIds);
+        return Image.findByIdAndUpdate(i._id, {
+          $set: { annotationIds: [...annotationsIds] },
+        })
+          .then((res) => {
+            console.log(res);
+          })
+          .catch((er) => {
+            console.log(er);
+          });
+      }
+    }))
 
     // update the annotators with the new images
     // we don't wait for it's completion

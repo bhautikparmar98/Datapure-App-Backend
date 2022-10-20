@@ -48,6 +48,11 @@ export const CreatePreAnnotatedProjectSchema = Joi.object({
   type: Joi.string()
     .valid(AnnotationTypes.IMAGE_ANNOTATION, AnnotationTypes.TEXT_ANNOTATION)
     .required(),
+  dataType: Joi.string().valid(
+    AnnotationTypes.IMAGE_ANNOTATION,
+    AnnotationTypes.TEXT_ANNOTATION,
+    AnnotationTypes.PRE_ANNOTATED_DATA
+  ),
   images: Joi.array()
     .items(
       Joi.object({
@@ -87,6 +92,20 @@ export const AddImageToProjectSchema = Joi.object({
       Joi.object({
         url: Joi.string().required(),
         fileName: Joi.string().required(),
+        annotations: Joi.array()
+          .items(
+            Joi.object({
+              x: Joi.number().required(),
+              y: Joi.number().required(),
+              width: Joi.number().required(),
+              height: Joi.number().required(),
+              id: Joi.any(),
+              type: Joi.string().required(),
+              classId: Joi.any().required(),
+              attributes: Joi.any(),
+            })
+          )
+          .required(),
       })
     )
     .required(),

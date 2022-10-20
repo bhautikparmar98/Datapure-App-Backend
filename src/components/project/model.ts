@@ -4,6 +4,7 @@ import { IProject } from './types';
 const ProjectClassSchema = new Schema({
   name: { type: 'string', required: true, trim: true, min: 3 },
   color: { type: 'string', required: true },
+  id: { type: 'number', required: true },
 });
 
 const ProjectSchema = new Schema<IProject>(

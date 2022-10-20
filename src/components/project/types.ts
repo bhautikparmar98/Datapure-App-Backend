@@ -32,6 +32,7 @@ export interface IProject {
 
 export interface ProjectClass {
   _id: ObjectId;
+  id: number;
   name: string;
   color: string;
 }
