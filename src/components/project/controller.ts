@@ -322,7 +322,7 @@ const createPreAnnotatedProject: RequestHandler = async (req, res) => {
 const addImages: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const { images } = req.body;
+    const { images, imgsStatus = ImageStatus.PENDING_ANNOTATION } = req.body;
 
     const permission = ac.can(req.user.role).createOwn('image');
     if (!permission.granted)
@@ -336,7 +336,8 @@ const addImages: RequestHandler = async (req, res) => {
     // create images
     const imagesIds = await ImageService.createImages(
       images as { url: string; fileName: string }[],
-      project._id.toString() as any
+      project._id.toString() as any, 
+      imgsStatus
     );
 
     // update images ids in the project and update counts

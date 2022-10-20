@@ -1,12 +1,12 @@
-import aws from 'aws-sdk';
-import config from '../../config';
-import { v4 as uuidv4 } from 'uuid';
-import mime from 'mime-types';
-import { IImage } from './types';
-import mongoose, { ObjectId } from 'mongoose';
-import { Image } from './model';
-import { ImageStatus } from '../../constants';
-import AnnotationService from '../annotation/service';
+import aws from "aws-sdk";
+import config from "../../config";
+import { v4 as uuidv4 } from "uuid";
+import mime from "mime-types";
+import { IImage } from "./types";
+import mongoose, { ObjectId } from "mongoose";
+import { Image } from "./model";
+import { ImageStatus } from "../../constants";
+import AnnotationService from "../annotation/service";
 
 // get the s3 region
 const region = config.aws.s3.region;
@@ -16,16 +16,16 @@ const s3 = new aws.S3({
   accessKeyId: config.aws.keyId,
   secretAccessKey: config.aws.secretAccessKey,
   region,
-  signatureVersion: 's3v4',
+  signatureVersion: "s3v4",
 });
 
 // default image extension
-const defaultExtension = 'png';
+const defaultExtension = "png";
 
 const getSignedUrl = (file: string) => {
   const bucket = config.aws.s3.bucket;
   // split the file name
-  const result = file.split('.');
+  const result = file.split(".");
 
   const fileName = file;
   // the extension is the last item in the name ex .jpg
@@ -37,7 +37,7 @@ const getSignedUrl = (file: string) => {
   }
 
   const { contentStorageKey, contentStorageBucketName, contentType } = {
-    contentStorageKey: uuidv4() + '-' + fileName,
+    contentStorageKey: uuidv4() + "-" + fileName,
     contentStorageBucketName: bucket,
     contentType: mime.contentType(extension),
   };
@@ -48,11 +48,11 @@ const getSignedUrl = (file: string) => {
     Key: contentStorageKey,
     Expires: 60 * 60 * 60, //1hour
     ContentType: contentType,
-    ACL: 'public-read',
+    ACL: "public-read",
   };
 
   // get a preassigned url to the image
-  const presignedURL = s3.getSignedUrl('putObject', params);
+  const presignedURL = s3.getSignedUrl("putObject", params);
   // build the expected url that the image will live on
   const url = `https://${bucket}.s3.${region}.amazonaws.com/${contentStorageKey}`;
 
@@ -62,14 +62,15 @@ const getSignedUrl = (file: string) => {
 
 const createImages = async (
   images: { url: string; fileName: string }[],
-  projectId: any
+  projectId: any,
+  imgsStatus = ImageStatus.PENDING_ANNOTATION
 ): Promise<any[]> => {
   // build the payload for the insert many images
   const payload = images.map((i) => ({
     src: i.url,
     fileName: i.fileName,
     projectId: new mongoose.Types.ObjectId(projectId),
-    status: ImageStatus.PENDING_ANNOTATION,
+    status: imgsStatus,
   }));
 
   const results = await Image.insertMany(payload);
@@ -85,7 +86,7 @@ const removeImages = async (projectId: string, imagesIds: string[]) => {
   for (let i = 0; i < images.length; i++) {
     const img = images[i];
     if (img.projectId.toString() !== projectId)
-      throw new Error('Invalid image related to this project');
+      throw new Error("Invalid image related to this project");
 
     // validate the status
     if (
@@ -94,12 +95,12 @@ const removeImages = async (projectId: string, imagesIds: string[]) => {
         img.status === ImageStatus.ANNOTATION_INPROGRESS
       )
     )
-      throw new Error('Invalid image status');
+      throw new Error("Invalid image status");
   }
 
   // deleting object from s3
   const bucketImages = images.map((img) => ({
-    Key: '/' + img.src.split('/').reverse()[0],
+    Key: "/" + img.src.split("/").reverse()[0],
   }));
 
   await s3
@@ -110,8 +111,8 @@ const removeImages = async (projectId: string, imagesIds: string[]) => {
       },
       async (err, data) => {
         if (err) {
-          console.log('err', err);
-          throw new Error('Something wrong with deleting s3 images ');
+          console.log("err", err);
+          throw new Error("Something wrong with deleting s3 images ");
         }
 
         // if success delete images from our database
@@ -352,8 +353,8 @@ const getProjectImageForAnnotator = async (
     },
   })
     .limit(take)
-    .populate('projectId', 'classes')
-    .populate('annotationIds');
+    .populate("projectId", "classes")
+    .populate("annotationIds");
   return images;
 };
 
@@ -369,8 +370,8 @@ const getProjectRedoImageForAnnotator = async (
     status: ImageStatus.PENDING_REDO,
   })
     .limit(take)
-    .populate('projectId', 'classes')
-    .populate('annotationIds');
+    .populate("projectId", "classes")
+    .populate("annotationIds");
 
   return images;
 };
@@ -386,8 +387,8 @@ const getProjectImageForQA = async (
     status: ImageStatus.PENDING_QA,
   })
     .limit(take)
-    .populate('projectId', 'classes')
-    .populate('annotationIds');
+    .populate("projectId", "classes")
+    .populate("annotationIds");
 
   return images;
 };
@@ -402,8 +403,8 @@ const getProjectPendingReviewImageForClient = async (
     status: ImageStatus.PENDING_CLIENT_REVIEW,
   })
     .limit(take)
-    .populate('projectId', 'classes')
-    .populate('annotationIds');
+    .populate("projectId", "classes")
+    .populate("annotationIds");
 
   return images;
 };
@@ -416,7 +417,7 @@ const getProjectImagesWithAnnotations = async (
   const images = await Image.find({
     projectId,
     status: { $in: statuses },
-  }).populate('annotationIds');
+  }).populate("annotationIds");
 
   return images;
 };

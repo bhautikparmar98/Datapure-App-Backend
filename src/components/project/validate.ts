@@ -1,5 +1,5 @@
-import { Joi } from 'celebrate';
-import { AnnotationTypes, Roles } from '../../constants';
+import { Joi } from "celebrate";
+import { AnnotationTypes, Roles, ImageStatus } from "../../constants";
 
 export const CreateProject = Joi.object({
   name: Joi.string().min(2).max(50).required(),
@@ -109,6 +109,14 @@ export const AddImageToProjectSchema = Joi.object({
       })
     )
     .required(),
+  imgsStatus: Joi.string().valid(
+    ImageStatus.PENDING_ANNOTATION,
+    ImageStatus.ANNOTATION_INPROGRESS,
+    ImageStatus.PENDING_REDO,
+    ImageStatus.PENDING_CLIENT_REVIEW,
+    ImageStatus.DONE,
+    ImageStatus.PENDING_QA
+  ),
 });
 
 export const RemoveImagesSchema = Joi.object({
