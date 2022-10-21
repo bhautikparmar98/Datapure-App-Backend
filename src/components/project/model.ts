@@ -1,11 +1,11 @@
-import mongoose, { Model, Schema } from 'mongoose';
-import { IProject } from './types';
+import mongoose, { Model, Schema } from 'mongoose'
+import { IProject } from './types'
 
 const ProjectClassSchema = new Schema({
   name: { type: 'string', required: true, trim: true, min: 3 },
   color: { type: 'string', required: true },
-  id: { type: 'number', required: true },
-});
+  id: { type: 'number' },
+})
 
 const MetaDataSchema = new Schema({
   metaname: { type: 'string', required: false },
@@ -16,7 +16,7 @@ const MetaDataSchema = new Schema({
   defaultValue: { type: 'string', required: false },
   descriptions: { type: 'string', required: false },
   required: { type: 'boolean', required: false },
-});
+})
 
 const ProjectSchema = new Schema<IProject>(
   {
@@ -90,9 +90,6 @@ const ProjectSchema = new Schema<IProject>(
     sdkToken: String,
   },
   { timestamps: true }
-);
+)
 
-export const Project: Model<IProject> = mongoose.model(
-  'Project',
-  ProjectSchema
-);
+export const Project: Model<IProject> = mongoose.model('Project', ProjectSchema)
