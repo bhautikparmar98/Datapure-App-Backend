@@ -1,5 +1,5 @@
-import { Joi } from "celebrate";
-import { AnnotationTypes, Roles, ImageStatus } from "../../constants";
+import { Joi } from 'celebrate';
+import { AnnotationTypes, Roles, ImageStatus } from '../../constants';
 
 export const CreateProject = Joi.object({
   name: Joi.string().min(2).max(50).required(),
