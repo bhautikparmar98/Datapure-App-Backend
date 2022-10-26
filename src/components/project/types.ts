@@ -27,11 +27,25 @@ export interface IProject {
 
   finished: boolean;
 
+  attributes: ProjectMetaData[];
+
   sdkToken?: string;
 }
 
 export interface ProjectClass {
   _id: ObjectId;
+  id: number;
   name: string;
   color: string;
+}
+
+export interface ProjectMetaData {
+  name: string;
+  type: string;
+  displayName: string;
+  classes: string;
+  maxCharacters: number;
+  defaultValue: string;
+  descriptions: string;
+  required: boolean;
 }

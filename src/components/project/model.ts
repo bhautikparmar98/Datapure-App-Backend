@@ -4,6 +4,18 @@ import { IProject } from './types';
 const ProjectClassSchema = new Schema({
   name: { type: 'string', required: true, trim: true, min: 3 },
   color: { type: 'string', required: true },
+  id: { type: 'number' },
+});
+
+const MetaDataSchema = new Schema({
+  metaname: { type: 'string', required: false },
+  metatype: { type: 'string', required: false },
+  displayName: { type: 'string', required: false },
+  classes: { type: 'string', required: false },
+  maxCharacters: { type: 'number', required: false },
+  defaultValue: { type: 'string', required: false },
+  descriptions: { type: 'string', required: false },
+  required: { type: 'boolean', required: false },
 });
 
 const ProjectSchema = new Schema<IProject>(
@@ -72,6 +84,8 @@ const ProjectSchema = new Schema<IProject>(
 
     assignedAnnotators: [{ type: Number }],
     assignedQAs: [{ type: Number }],
+
+    attributes: [MetaDataSchema],
 
     sdkToken: String,
   },

@@ -45,6 +45,7 @@ const createPreAnnotations = async (
     classId: classesMap[a.classId as any],
     imageId: id,
     visible: true,
+    attributes: a.attributes,
   }));
 
   // insert the annotations in the database

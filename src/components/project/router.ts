@@ -65,6 +65,7 @@ router.put(
   controller.assignAdminToProject
 );
 
+router.put('/:id/metadata', controller.addMetaDataToProject);
 router.put('/:id/assign/qa', controller.assignQAsToProject);
 
 router.put('/:id/assign/annotator', controller.assignAnnotatorsToProject);

@@ -10,6 +10,9 @@ import UserService from '../user/service';
 import { Project } from './model';
 import ProjectService from './service';
 import { generateAuthToken } from '../../utils/jwt';
+import AnnotationService from '../annotation/service';
+import { Image } from '../image/model';
+import { Annotation } from '../annotation/model';
 
 // only client will use this method to create a new register
 const createProject: RequestHandler = async (req, res) => {
@@ -246,7 +249,8 @@ const createPreAnnotatedProject: RequestHandler = async (req, res) => {
     if (!permission.granted)
       return res.status(403).send(appResponse('You are not allowed', false));
 
-    const { name, dueAt, type, classes, images, annotationType } = req.body;
+    const { name, dueAt, type, classes, images, annotationType, dataType } =
+      req.body;
 
     // the image status should be one of pending annotation or pending client review
     if (
@@ -262,7 +266,7 @@ const createPreAnnotatedProject: RequestHandler = async (req, res) => {
     const project = new Project({
       name,
       dueAt,
-      type,
+      type: dataType,
       classes,
       imagesIds: [],
       userId: req.user.id,
@@ -274,7 +278,6 @@ const createPreAnnotatedProject: RequestHandler = async (req, res) => {
       doneCount: 0,
       qaCount: 0,
       redoCount: 0,
-
       assignedAnnotators: [],
       assignedQAs: [],
     });
@@ -320,7 +323,7 @@ const createPreAnnotatedProject: RequestHandler = async (req, res) => {
 const addImages: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const { images } = req.body;
+    const { images, imgsStatus = ImageStatus.PENDING_ANNOTATION } = req.body;
 
     const permission = ac.can(req.user.role).createOwn('image');
     if (!permission.granted)
@@ -334,7 +337,8 @@ const addImages: RequestHandler = async (req, res) => {
     // create images
     const imagesIds = await ImageService.createImages(
       images as { url: string; fileName: string }[],
-      project._id.toString() as any
+      project._id.toString() as any,
+      imgsStatus
     );
 
     // update images ids in the project and update counts
@@ -344,6 +348,44 @@ const addImages: RequestHandler = async (req, res) => {
 
     // save the project
     await project.save();
+
+    const classes = project.classes;
+
+    const enhancedClasses: any[] = [];
+    classes.forEach((element: any, index: number) => {
+      enhancedClasses.push({
+        ...element,
+        _id: project.classes[index]._id,
+        id: project.classes[index].id,
+      });
+    });
+
+    const newImages = await ImageService.getProjectImages(id);
+
+    // const imagesIdOfProject = project.imagesIds.map((id) => id.toString());
+
+    await Promise.all(
+      images.map(async (image: any) => {
+        const i = newImages.find((data) => data.src === image.url);
+        if (i) {
+          const annotationsIds = await AnnotationService.createPreAnnotations(
+            image.annotations,
+            i._id.toString(),
+            enhancedClasses
+          );
+          console.log(annotationsIds);
+          return Image.findByIdAndUpdate(i._id, {
+            $set: { annotationIds: [...annotationsIds] },
+          })
+            .then((res) => {
+              console.log(res);
+            })
+            .catch((er) => {
+              console.log(er);
+            });
+        }
+      })
+    );
 
     // update the annotators with the new images
     // we don't wait for it's completion
@@ -498,6 +540,59 @@ const assignAnnotatorsToProject: RequestHandler = async (req, res) => {
   } catch (error) {
     logger.error(error);
     res.status(500).send(appResponse('Error assign qas to project', false));
+  }
+};
+
+const addMetaDataToProject: RequestHandler = async (req, res) => {
+  try {
+    // const user = req.user;
+    const { id } = req.params;
+
+    // const permission = ac.can(user.role).readOwn(Resources.PROJECT);
+    // if (!permission.granted)
+    //   return res.status(403).send(appResponse('You are not allowed', false));
+
+    const project = await Project.findById(id as string);
+
+    if (!project)
+      return res.status(400).send(appResponse('Invalid project id', false));
+
+    // make sure that the user is the admin that assigned to this project
+
+    // if (project.adminId !== user.id)
+    //   return res.status(403).send(appResponse('You are not allowed', false));
+    console.log('hello');
+    // update assigned annotators
+    project.attributes = [...project.attributes, req.body];
+
+    const classesIdArray = project.classes.map((e) => e._id.toString());
+    // await Annotation.updateMany(
+    //   { classId: { $in: classesIdArray } },
+    //   {
+    //     $unset: {
+    //       metadata: 1
+    //     },
+    //   }
+    // );
+
+    await Annotation.updateMany(
+      { classId: { $in: classesIdArray } },
+      {
+        $set: {
+          [`attributes.${req.body.metaname}`]: req.body.defaultValue || '',
+        },
+      }
+    );
+
+    // save the project
+    await project.save();
+
+    res.status(200).send({ success: true });
+  } catch (error) {
+    logger.error(error);
+    res
+      .status(500)
+      .send(appResponse('Error,in adding meta-properties in project', false));
   }
 };
 
@@ -676,6 +771,7 @@ const downloadOutputFile: RequestHandler = async (req, res) => {
               type: s.type,
               id: s._id?.toString(),
             })),
+            attributes: anno?.attributes,
           };
         }),
       };
@@ -704,6 +800,7 @@ const downloadOutputFile: RequestHandler = async (req, res) => {
 
 export {
   createProject,
+  addMetaDataToProject,
   CreateProjectForHUmanInLoop,
   getProjectImages,
   addImages,

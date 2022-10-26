@@ -1,5 +1,5 @@
 import { Joi } from 'celebrate';
-import { AnnotationTypes, Roles } from '../../constants';
+import { AnnotationTypes, Roles, ImageStatus } from '../../constants';
 
 export const CreateProject = Joi.object({
   name: Joi.string().min(2).max(50).required(),
@@ -48,6 +48,11 @@ export const CreatePreAnnotatedProjectSchema = Joi.object({
   type: Joi.string()
     .valid(AnnotationTypes.IMAGE_ANNOTATION, AnnotationTypes.TEXT_ANNOTATION)
     .required(),
+  dataType: Joi.string().valid(
+    AnnotationTypes.IMAGE_ANNOTATION,
+    AnnotationTypes.TEXT_ANNOTATION,
+    AnnotationTypes.PRE_ANNOTATED_DATA
+  ),
   images: Joi.array()
     .items(
       Joi.object({
@@ -63,6 +68,7 @@ export const CreatePreAnnotatedProjectSchema = Joi.object({
               id: Joi.any(),
               type: Joi.string().required(),
               classId: Joi.any().required(),
+              attributes: Joi.any(),
             })
           )
           .required(),
@@ -87,9 +93,31 @@ export const AddImageToProjectSchema = Joi.object({
       Joi.object({
         url: Joi.string().required(),
         fileName: Joi.string().required(),
+        annotations: Joi.array()
+          .items(
+            Joi.object({
+              x: Joi.number().required(),
+              y: Joi.number().required(),
+              width: Joi.number().required(),
+              height: Joi.number().required(),
+              id: Joi.any(),
+              type: Joi.string().required(),
+              classId: Joi.any().required(),
+              attributes: Joi.any(),
+            })
+          )
+          .required(),
       })
     )
     .required(),
+  imgsStatus: Joi.string().valid(
+    ImageStatus.PENDING_ANNOTATION,
+    ImageStatus.ANNOTATION_INPROGRESS,
+    ImageStatus.PENDING_REDO,
+    ImageStatus.PENDING_CLIENT_REVIEW,
+    ImageStatus.DONE,
+    ImageStatus.PENDING_QA
+  ),
 });
 
 export const RemoveImagesSchema = Joi.object({
