@@ -30,6 +30,9 @@ router.post(
   celebrate({ body: CreateProjectForHUmanInLoopSchema }),
   controller.CreateProjectForHUmanInLoop
 );
+
+router.delete('/:id', controller.deleteProject);
+
 //this request is used by SDK only
 router.get('/humanInLoop/id', controller.getProjectId);
 router.get('/:id', controller.getProject);

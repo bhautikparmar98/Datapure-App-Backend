@@ -79,9 +79,15 @@ const createImages = async (
 };
 
 // this method is responsible for removing images
-const removeImages = async (projectId: string, imagesIds: string[]) => {
+const removeImages = async (
+  projectId: string,
+  imagesIds: string[],
+  removingProject = false
+) => {
   // find images that want to delete
   const images = await Image.find({ _id: { $in: imagesIds } });
+
+  if (images.length === 0) return;
 
   // check to see if there are any images does not relate to this project or not
   for (let i = 0; i < images.length; i++) {
@@ -89,14 +95,16 @@ const removeImages = async (projectId: string, imagesIds: string[]) => {
     if (img.projectId.toString() !== projectId)
       throw new Error('Invalid image related to this project');
 
-    // validate the status
-    if (
-      !(
-        img.status === ImageStatus.PENDING_ANNOTATION ||
-        img.status === ImageStatus.ANNOTATION_INPROGRESS
+    // validate the status only if not removing the whole project
+    if (!removingProject) {
+      if (
+        !(
+          img.status === ImageStatus.PENDING_ANNOTATION ||
+          img.status === ImageStatus.ANNOTATION_INPROGRESS
+        )
       )
-    )
-      throw new Error('Invalid image status');
+        throw new Error('Invalid image status');
+    }
   }
 
   // deleting object from s3

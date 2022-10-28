@@ -798,6 +798,32 @@ const downloadOutputFile: RequestHandler = async (req, res) => {
   }
 };
 
+const deleteProject: RequestHandler = async (req, res) => {
+  try {
+    const user = req.user;
+    const { id } = req.params;
+
+    const permission = ac.can(user.role).deleteOwn(Resources.PROJECT);
+    if (!permission.granted)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    const project = await Project.findByIdAndDelete(id);
+    if (!project)
+      return res
+        .status(404)
+        .send(appResponse('This is not a valid project', false));
+
+    const imagesIds = project.imagesIds.map((id) => id.toString());
+
+    // remove project images from our database and S3 bucket
+    await ImageService.removeImages(id, imagesIds, true);
+    res.status(200).send({ success: true });
+  } catch (error) {
+    logger.error(error);
+    res.status(500).send(appResponse('Error: Deleting a project data', false));
+  }
+};
+
 export {
   createProject,
   addMetaDataToProject,
@@ -816,6 +842,7 @@ export {
   getProjectId,
   addClasses,
   removeImages,
+  deleteProject,
 };
 
 // --*-------------- PRIVATE
