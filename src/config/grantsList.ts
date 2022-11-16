@@ -81,6 +81,12 @@ export const grantList = [
     action: 'create:own',
     attributes: '*',
   },
+  {
+    role: roles.CLIENT,
+    resource: Resources.PROJECT,
+    action: Actions.READ_OWN,
+    attributes: '*',
+  },
 
   // User section
   {
@@ -140,6 +146,13 @@ export const grantList = [
     attributes: '*',
   },
 
+  {
+    role: roles.CLIENT,
+    resource: Resources.ANNOTATOR,
+    action: Actions.READ_ANY,
+    attributes: '*',
+  },
+
   // ADMIN section
   {
     role: roles.SUPER_ADMIN,
@@ -163,6 +176,12 @@ export const grantList = [
   },
   {
     role: roles.ADMIN,
+    resource: Resources.QA,
+    action: Actions.READ_ANY,
+    attributes: '*',
+  },
+  {
+    role: roles.CLIENT,
     resource: Resources.QA,
     action: Actions.READ_ANY,
     attributes: '*',

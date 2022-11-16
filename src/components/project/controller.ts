@@ -477,8 +477,11 @@ const assignQAsToProject: RequestHandler = async (req, res) => {
     if (!project)
       return res.status(400).send(appResponse('Invalid project id', false));
 
-    // make sure that the user is the admin that assigned to this project
-    if (project.adminId !== user.id)
+    // make sure that the user is the admin that assigned to this project or this is the client who owns the project
+    if (
+      (user.role === Roles.ADMIN && project.adminId !== user.id) ||
+      (user.role === Roles.CLIENT && project.userId !== user.id)
+    )
       return res.status(403).send(appResponse('You are not allowed', false));
 
     // update number of working project for members
