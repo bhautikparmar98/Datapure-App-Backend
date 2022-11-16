@@ -39,7 +39,7 @@ router.get('/:id', controller.getProject);
 router.get('/:id/images', controller.getProjectImages);
 router.get('/:id/annotator/images', controller.getAnnotatorImagesForProject);
 router.get('/:id/qa/images', controller.getQAImagesForProject);
-router.get('/:id/client/review/images', controller.getClientImagesForProject);
+router.get('/:id/client/review', controller.getClientImagesForProject);
 
 router.post(
   '/:id/images',

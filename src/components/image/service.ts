@@ -451,7 +451,8 @@ const getProjectImageForQA = async (
 
 const getProjectPendingReviewImageForClient = async (
   projectId: string,
-  take = 10
+  take = 10,
+  skip = 0
 ) => {
   // find the image with project id with pending client review status
   const images = await Image.find({
@@ -459,6 +460,7 @@ const getProjectPendingReviewImageForClient = async (
     status: ImageStatus.PENDING_CLIENT_REVIEW,
   })
     .limit(take)
+    .skip(skip)
     .populate('projectId', 'classes')
     .populate('annotationIds');
 

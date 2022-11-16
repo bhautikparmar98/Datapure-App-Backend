@@ -645,7 +645,7 @@ const getAnnotatorImagesForProject: RequestHandler = async (req, res) => {
 const getClientImagesForProject: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const { take } = req.query;
+    const { take = 100, skip = 0 } = req.query;
     const userId = req.user.id;
 
     const project = await Project.findById(id as string);
@@ -660,7 +660,8 @@ const getClientImagesForProject: RequestHandler = async (req, res) => {
     // get pending review images for that client
     const images = await ImageService.getProjectPendingReviewImageForClient(
       id,
-      parseInt(take?.toString() || '100')
+      +take,
+      +skip
     );
 
     // build the payload
