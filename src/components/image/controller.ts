@@ -13,10 +13,21 @@ import ImageService from './service';
 const signUrl: RequestHandler = async (req, res) => {
   try {
     // get files from body
-    const { files } = req.body;
+    const { files, cloudFiles } = req.body;
+
+    // check every cloud file has direct downloadable link 
+    const checkCloudFiles = cloudFiles
+      ?.map((file: { name: string; link: string }) =>
+        file.hasOwnProperty('link')
+      )
+      .includes(false);
 
     // loop through files and for every file get signedURL
-    const result = files.map((file: string) => ImageService.getSignedUrl(file));
+    const result = !checkCloudFiles
+      ? cloudFiles?.map((file: { name: string; link: string }) => {
+          return { fileName: file.name, url: file.link };
+        })
+      : files.map((file: string) => ImageService.getSignedUrl(file));
 
     // return signed URLS
     res.status(200).send({ files: result });
