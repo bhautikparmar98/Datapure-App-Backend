@@ -3,6 +3,12 @@ import { ShapeType } from '../../constants';
 
 const ImageSignSchema = Joi.object({
   files: Joi.array().items(Joi.string()).required(),
+  cloudFiles: Joi.array().items(
+    Joi.object({
+      name: Joi.string(),
+      link: Joi.string().optional(),
+    })
+  ),
 });
 
 const AddAnnotationSchema = Joi.object({
