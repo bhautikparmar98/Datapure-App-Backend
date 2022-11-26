@@ -514,11 +514,11 @@ const assignAnnotatorsToProject: RequestHandler = async (req, res) => {
 
     if (!project)
       return res.status(400).send(appResponse('Invalid project id', false));
-// make sure that the user is the admin that assigned to this project or this is the client who owns the project
-      if (
-        (user.role === Roles.ADMIN && project.adminId !== user.id) ||
-        (user.role === Roles.CLIENT && project.userId !== user.id)
-      )
+    // make sure that the user is the admin that assigned to this project or this is the client who owns the project
+    if (
+      (user.role === Roles.ADMIN && project.adminId !== user.id) ||
+      (user.role === Roles.CLIENT && project.userId !== user.id)
+    )
       return res.status(403).send(appResponse('You are not allowed', false));
 
     // update number of working project for members
@@ -687,6 +687,43 @@ const getClientImagesForProject: RequestHandler = async (req, res) => {
     res.status(500).send(response);
   }
 };
+
+const getClientImagesPendingReviewIds: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const project = await Project.findById(id as string);
+
+    if (!project)
+      return res.status(400).send(appResponse('Invalid project id', false));
+
+    // make sure that the client own the project
+    if (project.userId !== userId)
+      return res.status(403).send(appResponse('You are not allowed', false));
+
+    const foundIds = await Image.find(
+      {
+        projectId: id,
+        status: ImageStatus.PENDING_CLIENT_REVIEW,
+      },
+      {
+        _id: 1,
+      }
+    );
+
+    const ids = foundIds.map((id) => id._id);
+
+    res.status(200).send({ ids });
+  } catch (err) {
+    logger.error(err);
+    const response = appResponse(
+      'Error getting pending review client images IDs',
+      false
+    );
+    res.status(500).send(response);
+  }
+};
 // get the images for qa
 const getQAImagesForProject: RequestHandler = async (req, res) => {
   try {
@@ -842,6 +879,7 @@ export {
   getQAImagesForProject,
   downloadOutputFile,
   getClientImagesForProject,
+  getClientImagesPendingReviewIds,
   createPreAnnotatedProject,
   getProject,
   getProjectId,
