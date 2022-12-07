@@ -28,7 +28,8 @@ const getSignedUrl = (file: string) => {
   // split the file name
   const result = file.split('.');
 
-  const fileName = file;
+  let fileName = file.replace(/[^a-zA-Z0-9.]/g, '_');
+
   // the extension is the last item in the name ex .jpg
   let extension = result[result.length - 1];
 
@@ -57,6 +58,7 @@ const getSignedUrl = (file: string) => {
   // build the expected url that the image will live on
   const url = `https://${bucket}.s3.${region}.amazonaws.com/${contentStorageKey}`;
 
+  fileName = file;
   // return presigned url and url and fileName
   return { presignedURL, url, fileName };
 };
