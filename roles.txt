@@ -1,0 +1,42 @@
+bhautikparmar98@gmail.com : 7oda12345 - SuperAdmin
+
+test@gmail.com : bo7fmAmUbe  - client
+
+bhautikadmin@gmail.com : C9ZlRf0K5S - admin
+
+bhautikannotator@gmail.com : EckoHWAmKc - Annotator
+
+bhautikqa@gmail.com : 9msm8QSVBH - 
+
+bhautikanno2@gmail.com : n5sor1EhbR
+
+bhautikparmarqa2@gmail.com : yz6IjqmTJl
+
+
+Super Admin
+sa@datapure.com   DatapurePass
+Himan Client
+himan@gmail.com	Client	ABC	J6LulyAh8a
+Himan Admin
+himan.admin@gmail.com	Admin	ABCC	j46Iw4536h
+Himan QA
+himan.qa@gmail.com	QA	ABBC	pd2UdL5V6F
+Himan VA
+himan.va@gmail.com	Annotator	AABC	C4ugi962xY
+
+
+
+Tasks:
+
+2. before search filter by role amd filter by selected or not selected.
+1. admin screen-> edit team -> search bar for name, arrow beside no/. of project for sorting
+3. cancel button color to red, and red cross on top right for exit.
+4. matches color exactly as color from figma file.
+5. sort -> sort by name, sort  by earliest, sort by oldest, sort by deadline, sort by progress.
+
+
+
+
+
+
+
